@@ -1,0 +1,51 @@
+/*
+ *
+ */
+
+.tile-box {
+  fill: #aa9;
+}
+.tile-box-border {
+  stroke: #999;
+}
+
+.tile-label {
+  font-family: Arial;
+  font-size: 10pt;
+  fill: #000;
+}
+
+.tile-label-right {
+  text-anchor: end;
+}
+
+.tile-track {
+  fill: #888;
+}
+.tile-track-occupied {
+  fill: #f44;
+}
+
+.tile-track-switch {
+  fill: #fff;
+}
+
+.tile-signal-mast {
+  fill: #333;
+}
+
+.tile-signal-off {
+  fill: #888
+}
+.tile-signal-red {
+  fill: #f00
+}
+.tile-signal-green {
+  fill: #0f4
+}
+.tile-signal-yellow {
+  fill: #ff0
+}
+.tile-signal-white {
+  fill: #fff
+}

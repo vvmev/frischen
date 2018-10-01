@@ -41,7 +41,7 @@ class MqttMonitor:
         else:
             ts = ''
         print('{}{}{}{}: {}'.format(
-            ts, fg('green'), msg.topic, attr('reset'), msg.payload,))
+            ts, fg('green'), msg.topic, attr('reset'), msg.payload.decode(),))
 
     def monitor(self):
         self.client.connect("localhost", 1883, 5)
