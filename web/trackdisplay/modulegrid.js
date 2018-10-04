@@ -441,13 +441,24 @@ window.onload = function() {
   signals['P4'] = new Signal('P4', new SignalHomeDistantReverseTile("P4"), signals['F'].home) // F has the distant signal for P4 if W6+
   // the distant signal at P4 is not currently wired up
 
+  var switches = []
+  switches["1"] = new TurnoutRightTile("1")
+  switches["2ab"] = new TurnoutRightReverseTile("2c/d")
+  switches["2cd"] = new TurnoutRightTile("2a/b")
+  switches["3ab"] = new TurnoutRightReverseTile("3c/d")
+  switches["3cd"] = new TurnoutRightTile("3a/b")
+  switches["5ab"] = new TurnoutLeftReverseTile("5c/d")
+  switches["5cd"] = new TurnoutLeftTile("5a/b")
+  switches["6"] = new TurnoutLeftReverseTile("6")
+  switches["GS1"] = new TurnoutLeftReverseTile("GS1")
+
   const emptyTile = new EmptyTile()
   var tiles = Array(numTilesVertically).fill().map(() => Array(numTilesHorizontally).fill(emptyTile))
 
   tiles[0][0] = new StraightTile()
   tiles[0][1] = new StraightTile()
   tiles[0][2] = new StraightTile()
-  tiles[0][3] = new TurnoutRightTile("W1")
+  tiles[0][3] = switches['1']
   tiles[0][4] = new StraightTile()
   tiles[0][5] = signals['P4'].home
   tiles[0][6] = new StraightTile()
@@ -455,7 +466,7 @@ window.onload = function() {
   tiles[0][8] = new StraightTile()
   tiles[0][9] = new StraightTile()
   tiles[0][10] = new StraightTile()
-  tiles[0][11] = new TurnoutLeftReverseTile("W6")
+  tiles[0][11] = switches['6']
   tiles[0][12] = signals['F'].home
   tiles[0][13] = new StraightTile()
   tiles[0][14] = signals['F'].distant
@@ -463,15 +474,15 @@ window.onload = function() {
   tiles[1][0] = signals['A'].distant
   tiles[1][1] = new StraightTile()
   tiles[1][2] = signals['A'].home
-  tiles[1][3] = new TurnoutRightReverseTile("W2a/b")
-  tiles[1][4] = new TurnoutRightTile("W2c/d")
+  tiles[1][3] = switches["2ab"]
+  tiles[1][4] = switches["2cd"]
   tiles[1][5] = new StraightTile()
   tiles[1][6] = new StraightTile()
   tiles[1][7] = new StraightTile()
   tiles[1][8] = new StraightTile()
   tiles[1][9] = signals['N3'].home
-  tiles[1][10] = new TurnoutLeftReverseTile("W5a/b")
-  tiles[1][11] = new TurnoutLeftTile("W5c/d")
+  tiles[1][10] = switches["5ab"]
+  tiles[1][11] = switches["5cd"]
   tiles[1][12] = new StraightTile()
   tiles[1][13] = new StraightTile()
   tiles[1][14] = new StraightTile()
@@ -480,8 +491,8 @@ window.onload = function() {
   // tiles[2][1] = new StraightTile()
   tiles[2][2] = new LeftReverseTile()
   tiles[2][3] = signals['B'].home
-  tiles[2][4] = new TurnoutRightReverseTile("W3a/b")
-  tiles[2][5] = new TurnoutRightTile("W3c/d")
+  tiles[2][4] = switches["3ab"]
+  tiles[2][5] = switches["3cd"]
   tiles[2][6] = signals['P2'].home
   tiles[2][7] = new StraightTile()
   tiles[2][8] = new StraightTile()
@@ -495,7 +506,7 @@ window.onload = function() {
   // tiles[3][3] = new StraightTile()
   // tiles[3][4] = new StraightTile()
   tiles[3][5] = new RightReverseTile()
-  tiles[3][6] = new TurnoutLeftReverseTile("GS1")
+  tiles[3][6] = switches["GS1"]
   tiles[3][7] = new StraightTile()
   tiles[3][8] = new StraightTile()
   // tiles[3][9] = new StraightTile()
@@ -545,5 +556,57 @@ window.onload = function() {
     }, 2000)
   }
 
-  someSteps()
+  //someSteps()
+
+  function stringToBoolean(string){
+      switch(string.toLowerCase().trim()){
+          case "true": case "yes": case "1": return true;
+          case "false": case "no": case "0": case null: return false;
+          default: return Boolean(string);
+      }
+  }
+
+  client = new Paho.MQTT.Client(location.hostname, Number(location.port), "frischen-display");
+  switchesTopic = "frischen/adorf/switch/";
+  signalsTopic = "frischen/adorf/signal/";
+  client.onConnectionLost = function(responseObject) {
+    if (responseObject.errorCode !== 0) {
+      console.log("onConnectionLost:" + responseObject.errorMessage);
+    }
+  };
+  client.onMessageArrived = function(msg) {
+    if (msg.destinationName.indexOf(switchesTopic) == 0) {
+      k = msg.destinationName.slice(switchesTopic.length);
+      s = stringToBoolean(msg.payloadString);
+      if (k in switches) {
+        console.log("switch " + k + " -> " + s);
+        switches[k].setSwitch(s);
+      } else {
+        console.log("unknown switch " + k);
+      }
+    } else if (msg.destinationName.indexOf(signalsTopic) == 0) {
+      k = msg.destinationName.slice(signalsTopic.length);
+      s = msg.payloadString;
+      if (k in signals) {
+        console.log("signal " + k + " -> " + s);
+        signals[k].setAspect(s);
+      } else {
+        console.log("unknown signals " + k);
+      }
+    } else {
+      console.log("unexpected message " + msg.destinationName + ": "
+        + msg.payloadString)
+    }
+  };
+  client.connect({
+    onSuccess: function() {
+      Object.keys(switches).forEach(function(k) {
+        client.subscribe(switchesTopic + k);
+      });
+      Object.keys(signals).forEach(function(k) {
+        client.subscribe(signalsTopic + k);
+      });
+    }
+  });
+
 }
