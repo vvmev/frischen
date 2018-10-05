@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 colored = "*"
 paho-mqtt = "*"
+graphviz = "*"
+pyyaml = "*"
 
 [dev-packages]
 

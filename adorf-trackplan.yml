@@ -1,0 +1,162 @@
+---
+name: 'Bahnhof A-dorf'
+elements:
+  'bheim-to':
+    name: 'Nach B-Heim'
+    type: connection
+    graphviz:
+      rank: min
+  'bheim-from':
+    name: 'Von B-Heim'
+    type: connection
+    graphviz:
+      rank: min
+  'dbach':
+    name: 'Von und nach D-bach'
+    type: connection
+    graphviz:
+      rank: min
+  'zwald':
+    name: 'Von und nach Z-Wald'
+    type: connection
+    graphviz:
+      rank: max
+  '10a':
+    name: 'a'
+    type: 'HV-V'
+  '10A':
+    name: 'A'
+    type: 'HV-H'
+  '10W1':
+    name: '1'
+    type: switch
+  '10W2a':
+    name: '2a/b'
+    type: switch
+  '10W2c':
+    name: '2c/d'
+    type: switch
+  '10W3a':
+    name: '3a/b'
+    type: switch
+  '10W3c':
+    name: '3c/d'
+    type: switch
+  '10W5a':
+    name: '5a/b'
+    type: switch
+  '10W5c':
+    name: '5c/d'
+    type: switch
+  '10W6':
+    name: '6'
+    type: switch
+  '10A13':
+    name: ''
+    type: buffer-stop
+  '10A1':
+    name: ''
+    type: buffer-stop
+tracks:
+  bheim-a:
+    start: 12000
+    end: 15000
+    connects:
+      - bheim-from
+      - '10a.0'
+  a-A:
+    start: 15000
+    end: 16000
+    connects:
+      - '10a.1'
+      - '10A.0'
+  'A-10W2a':
+    start: 16000
+    end: 17030
+    connects:
+      - '10A.1'
+      - '10W2a.0'
+  '10W1-10W2':
+    start: 17000
+    end: 17030
+    connects:
+      - '10W1.2'
+      - '10W2a.2'
+  '10W2a-10W2c':
+    start: 17030
+    end: 17030
+    connects:
+      - '10W2a.0'
+      - '10W2c.0'
+  '10W2c-10W5a':
+    start: 17030
+    end: 17770
+    connects:
+      - '10W2c.1'
+      - '10W5a.1'
+  '10W5a-10W5c':
+    start: 17770
+    end: 17770
+    connects:
+      - '10W5a.0'
+      - '10W5c.0'
+  '10W5c-10W6':
+    start: 17770
+    end: 17800
+    connects:
+      - '10W5c.2'
+      - '10W6.2'
+  '10W5c-10A13':
+    start: 17770
+    end: 17850
+    connects:
+      - '10W5c.1'
+      - '10A13'
+  '10W2c-10W3a':
+    start: 17030
+    end: 17060
+    connects:
+      - '10W2c.2'
+      - '10W3a.2'
+  '10W3a-10W3c':
+    start: 17060
+    end: 17060
+    connects:
+      - '10W3a.0'
+      - '10W3c.0'
+  '10W3c-10A1':
+    start: 17060
+    end: 17200
+    connects:
+      - '10W3c.2'
+      - '10A1'
+  'dbach-10W3a':
+    start: 12000
+    end: 17060
+    connects:
+      - 'dbach'
+      - '10W3a.1'
+  '10W3c-10W5a':
+    start: 17060
+    end: 17770
+    connects:
+      - '10W3c.1'
+      - '10W5a.2'
+  '10W1-10W6':
+    start: 17030
+    end: 17800
+    connects:
+      - '10W1.1'
+      - '10W6.1'
+  '10W6-zwald':
+    start: 17800
+    end: 19000
+    connects:
+      - '10W6.0'
+      - 'zwald'
+  '10W1-bheim':
+    start: 17000
+    end: 12000
+    connects:
+      - '10W1.0'
+      - 'bheim-to'
