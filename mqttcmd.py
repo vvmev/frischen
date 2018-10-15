@@ -5,10 +5,8 @@ import getopt
 import os
 import sys
 
-from datetime import datetime
+from frischen import MqttMonitor, MqttPost
 
-from colored import attr, fg
-import paho.mqtt.client as mqtt
 
 config = {
     'client_id': 'mqttcmd',
@@ -16,114 +14,6 @@ config = {
     'port': 1883,
     'timestamp': True,
 }
-
-
-class MqttClient:
-    qos = {
-        0: 'M',  # at most once
-        1: 'L',  # at least once
-        2: 'E',  # exactly once
-    }
-
-    def __init__(self, config, cmd):
-        self.client_id = config['client_id']
-        self.host = config['host']
-        self.port = config['port']
-        self.timestamp = config['timestamp']
-        self.client = mqtt.Client(
-            client_id='{}-{}'.format(self.client_id, cmd))
-        self.client.on_connect = self._on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_log = self.on_log
-        self.client.on_message = self.on_message
-        self.client.on_publish = self.on_publish
-        self.client.on_subscribe = self.on_subscribe
-        self.client.on_subscribe = self.on_subscribe
-        self.client.on_unsubscribe = self.on_unsubscribe
-
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc != 0:
-            print('Unable to connect to broker {}:{}: {}'.format(
-                self.host, self.port, rc))
-            sys.exit(64)
-        self.on_connect(client, userdata, flags, rc)
-
-    def on_connect(self, client, userdata, flags, rc):
-        pass
-
-    def on_disconnect(self, client, userdata, rc):
-        pass
-
-    def on_message(self, client, userdata, msg):
-        pass
-
-    def on_publish(self, client, userdata, mid):
-        pass
-
-    def on_subscribe(self, client, userdata, mid, granted_qos):
-        pass
-
-    def on_unsubscribe(client, userdata, mid):
-        pass
-
-    def on_log(client, userdata, level, buf):
-        print(buf)
-        pass
-
-
-class MqttMonitor(MqttClient):
-    def __init__(self, config, topics):
-        super().__init__(config, 'monitor')
-        self.topics = topics
-
-    def on_connect(self, client, userdata, flags, rc):
-        for t in self.topics:
-            client.subscribe(t)
-
-    def on_message(self, client, userdata, msg):
-        if self.timestamp:
-            ts = datetime.now().strftime('%H:%M:%S.%f ')
-        else:
-            ts = ''
-        qos = fg('blue') + self.qos[msg.qos] + attr('reset')
-        retain = (fg('blue') + 'R' + attr('reset')) if msg.retain else ''
-        print('{}{}{}{} ({}{}): {}'.format(
-            ts, fg('green'), msg.topic, attr('reset'),
-            qos, retain,
-            msg.payload.decode(),))
-
-    def monitor(self):
-        self.client.connect(self.host, self.port, 5)
-        self.client.loop_forever()
-
-
-class MqttPost(MqttClient):
-    '''
-    Connect to broker and post one or more messages.
-    '''
-
-    def __init__(self, config):
-        super().__init__(config, 'post')
-        self.complete = False
-
-    def publish_next(self):
-        if len(self.messages) == 0:
-            self.complete = True
-        else:
-            self.client.publish(self.topic, self.messages.pop(0))
-
-    def on_connect(self, client, userdata, flags, rc):
-        self.publish_next()
-
-    def on_publish(self, client, userdata, mid):
-        self.publish_next()
-
-    def post(self, topic, messages):
-        self.topic = topic
-        self.messages = messages
-        self.client.connect(self.host, self.port, 5)
-        while not self.complete:
-            self.client.loop(0.1)
 
 
 def usage():
@@ -148,7 +38,9 @@ def cmd_monitor(args):
     if len(args) < 1:
         print('You need to specify at least one topic.', file=sys.stderr)
         usage()
-    m = MqttMonitor(config, args)
+    m = MqttMonitor('{}-{}'.format(config['client_id'], 'monitor'),
+                    topics=args, host=config['host'], port=config['port'],
+                    timestamp=config['timestamp'])
     m.monitor()
 
 
@@ -157,7 +49,8 @@ def cmd_post(args):
             print('must specify least the topic and one message',
                   file=sys.stderr)
             usage()
-        p = MqttPost(config)
+        p = MqttPost('{}-{}'.format(config['client_id'], 'post'),
+                     config['host'], config['port'])
         p.post(args[0], args[1:])
 
 
