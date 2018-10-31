@@ -1,0 +1,82 @@
+/*
+ * Styles for a L20 style panel
+ */
+
+.frischen-button {
+  fill: #888;
+  stroke: #000;
+}
+
+.frischen-button-pressed {
+  stroke: #ff0;
+}
+
+.frischen-clicktarget {
+  fill: rgba(255, 255, 255, 0);
+  stroke: none;
+  cursor: pointer;
+}
+
+.frischen-counter {
+  fill: url(#countergradient);
+  stroke: #000;
+}
+text.frischen-counter {
+  fill: #ccc;
+  stroke: none;
+  font-family: Arial;
+  font-size: 14px;
+  font-weight: bold;
+  text-anchor: middle;
+  letter-spacing: 4px;
+}
+
+.frischen-indicator {
+  fill: #666;
+}
+
+.frischen-label {
+  fill: #fff;
+  stroke: #000;
+}
+text.frischen-label {
+  fill: #000;
+  stroke: none;
+  font-family: Arial;
+  font-size: 14px;
+  text-anchor: middle;
+}
+
+.frischen-module-box {
+  fill: #7a7;
+}
+.frischen-module-box-border {
+  stroke: #666;
+}
+
+.frischen-switch-position {
+  fill: #fff
+}
+
+.frischen-track {
+  fill: #000;
+}
+.frischen-track-occupied {
+  fill: #f00
+}
+
+.frischen-signal-off {
+  fill: #888
+}
+.frischen-signal-red {
+  fill: #f00
+}
+.frischen-signal-green {
+  fill: #0f4
+}
+.frischen-signal-yellow {
+  fill: #ff0
+}
+.frischen-signal-white {
+  fill: #fff
+}
