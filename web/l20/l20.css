@@ -55,11 +55,14 @@ text.frischen-label {
 }
 
 .frischen-switch-position {
-  fill: #fff
+  fill: #ffa
 }
 
 .frischen-track {
   fill: #000;
+}
+.frischen-track-locked {
+  fill: #ff8
 }
 .frischen-track-occupied {
   fill: #f00
@@ -75,7 +78,7 @@ text.frischen-label {
   fill: #0f4
 }
 .frischen-signal-yellow {
-  fill: #ff0
+  fill: #ff8
 }
 .frischen-signal-white {
   fill: #fff
