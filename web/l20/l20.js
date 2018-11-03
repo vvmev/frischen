@@ -40,16 +40,17 @@
    */
   let PanelClient = class {
     constructor(name) {
-      this.client = new Paho.MQTT.Client(location.hostname, Number(location.port), `frischen-${name}`);
-      this.topic = `frischen/${name}`;
+      this.client = new Paho.MQTT.Client(location.hostname, Number(location.port),
+        `frischen-${name}`);
+      this.topic = `frischen/${name}/panel`;
       this.subscriptions = {}
       this.is_connected = false
 
-      this.subscriptions['frischen/time/1hz'] = m => {
-        console.log("1hz")
-      }
+      this.subscriptions['frischen/time/1hz'] = [m => {
+        // toggle blinker
+      }]
 
-      //this.client.onConnectionLost = resp => this.onConnectionLost(resp)
+      this.client.onConnectionLost = resp => this.onConnectionLost(resp)
       this.client.onMessageArrived = msg => this.onMessageArrived(msg)
       this.client.connect({onSuccess: options => this.onConnected(options)})
     }
@@ -57,10 +58,8 @@
     onConnected(options) {
       try {
         let topic = this.topic
-        console.log(`Connected, making ${Object.keys(this.subscriptions).length} subscriptions`)
         for(let k of Object.keys(this.subscriptions)) {
-          this.client.subscribe(`${topic}/${k}`);
-          console.log(`subscribing to ${k} (onConnected)`)
+          this.client.subscribe(k);
         }
         this.is_connected = true
       } catch(e) {
@@ -70,10 +69,10 @@
 
     onConnectionLost(resp) {
       try {
-        console.log(`Connection lost`)
+        console.log(`Connection lost, reconnecting`)
         if (resp.errorCode !== 0) {
           this.is_connected = false
-          //this.client.connect({onSuccess: this.onConnected})
+          this.client.connect({onSuccess: this.onConnected})
         }
       } catch(e) {
         console.log(`onConnectionLost: ${e}`)
@@ -82,10 +81,8 @@
 
     onMessageArrived(msg) {
       try {
-        if (msg.destinationName.indexOf(this.topic) == 0) {
-          let k = msg.destinationName.slice(this.topic.length + 1);
-          // s = stringToBoolean(msg.payloadString);
-          console.log(`message ${k} = ${msg.payloadString} received`)
+        let k = msg.destinationName
+        if (this.subscriptions[k] !== undefined) {
           for (let callback of this.subscriptions[k]) {
             callback(k, msg.payloadString)
           }
@@ -104,15 +101,14 @@
     }
 
     subscribe(kind, subject, callback) {
-      let k = `${kind}/${subject}`
+      let k = `${this.topic}/${kind}/${subject}`
       if (this.subscriptions[k] === undefined) {
         this.subscriptions[k] = new Array()
       }
       this.subscriptions[k].push(callback)
       if (this.is_connected) {
-        console.log(`subscribing to ${k}`)
         for (let c of this.subscriptions[k]) {
-          this.client.subscribe(`${this.topic}/${k}`)
+          this.client.subscribe(k)
         }
       }
     }
