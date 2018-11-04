@@ -13,7 +13,19 @@ The broker configuration is in [mosquitto/config/mosquitto.conf](mosquitto/confi
 
 Use [pipenv](https://pipenv.readthedocs.io/en/latest/) to set up your local Python environment.
 
-Simple Python apps have a single file in the top level diretory.
+#### Quick Start with Pipenv
+
+1. Install Python 3.7:
+
+  * macOS: `brew install python3`. No brew? [Follow these instructions](https://brew.sh).
+
+  * Windows: Download the latest Python 3 Release [Windows x86 executable installer](https://www.python.org/downloads/windows/) and run the installer.
+
+1. Install pipenv: `python3 -m pip install pipenv`
+1. Run `pipenv install`.
+1. Run `pipenv shell` to get a command line environment to run the Python scripts.
+
+Simple Python apps have a single file in the top level directory.
 
 ### Web
 
