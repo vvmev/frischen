@@ -45,7 +45,8 @@ class SwitchController():
     def __init__(self, base_topic):
         self.client = MQTTClient()
         self.switch_group_button = 'WGT'
-        self.switch_group_button_state = '0'
+        self.switch_group_button_state = 0
+        self.switch_group_button_reset = None
         self.switches = {}
         self.base_topic = base_topic
         logger.setLevel(logging.DEBUG)
@@ -68,6 +69,21 @@ class SwitchController():
         logger.debug(f'Publishing {topic} = {value}')
         asyncio.create_task(self.client.publish(topic, value))
 
+    async def reset_signal_group_button(self):
+        logger.debug(f'Started signal_group_button timeout')
+        await asyncio.sleep(5)
+        logger.debug(f'signal_group_button timeout reached')
+        self.switch_group_button_state = 0
+        self.publish(
+            self.topic('button', self.switch_group_button), b'0')
+        self.switch_group_button_reset = None
+
+    def start_reset_signal_group_button(self):
+        if self.switch_group_button_reset:
+            self.switch_group_button_reset.cancel()
+        self.switch_group_button_reset = asyncio.create_task(
+            self.reset_signal_group_button())
+
     async def handle(self):
         self.publish(
             self.topic('button', self.switch_group_button), b'0')
@@ -83,11 +99,15 @@ class SwitchController():
                 value = packet.payload.data.decode()
 
                 button = self.subject(topic, 'button')
+                value = int(value)
                 if button == self.switch_group_button:
                     self.switch_group_button_state = value
+                    if value == 1:
+                        self.start_reset_signal_group_button()
                 if button in self.switches:
-                    if self.switch_group_button_state == '1' and \
-                            value == '1':
+                    if self.switch_group_button_state == 1 and \
+                            value == 1:
+                        self.start_reset_signal_group_button()
                         asyncio.ensure_future(self.switches[button].change())
             await self.client.unsubscribe(['frischen/time/#'])
             await self.client.disconnect()
