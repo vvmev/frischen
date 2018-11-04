@@ -32,11 +32,11 @@ text.frischen-counter {
 }
 
 .frischen-indicator {
-  fill: #666;
+  fill: #aaa;
 }
 
 .frischen-label {
-  fill: #fff;
+  fill: #aaa;
   stroke: #000;
 }
 text.frischen-label {
