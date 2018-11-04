@@ -8,34 +8,70 @@ from hbmqtt.mqtt.constants import QOS_0
 logger = logging.getLogger(__name__)
 
 
-class BlockEnd():
+class Element():
+    initial_value = 0
+
     def __init__(self, controller, name):
         self.controller = controller
+        self.kind = self.__class__.__name__.lower()
         self.name = name
         self.state = 0
-        self.controller.block_ends[self.name] = self
+        if self.kind not in self.controller.elements:
+            logger.debug(f'my name is {self.kind}')
+            self.controller.elementClass[self.kind] = self.__class__
+            self.controller.elements[self.kind] = {}
+        self.controller.elements[self.kind][self.name] = self
 
-    def publish(self):
-        self.controller.publish(
-            self.controller.topic('blockend', self.name),
-            str(self.state).encode('utf-8')
-        )
+    @classmethod
+    def initialize(cls, controller):
+        kind = cls.__name__.lower()
+        for e in controller.elements[kind].values():
+            e.value = cls.initial_value
 
-    def set(self, state):
-        self.state = state
+    @classmethod
+    def act_on_button(cls, controller, button, value):
+        if value and button in controller.elements['blockend'] \
+                and controller.sticky_buttons['BlGT'].state:
+            controller.sticky_buttons['BlGT'].start()
+            controller.elements['blockend'][button].value = 1
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        self.__value = value
         self.publish()
 
-
-class Signal():
-    def __init__(self, controller, name):
-        self.controller = controller
-        self.name = name
-        self.aspect = 'Hp0'
-        self.aspects = []
-        self.controller.signals[self.name] = self
-
     def __repr__(self):
-        return f'Signal<{self.name}>'
+        return f'{self.__class__.__name__}<{self.name}>'
+
+    def publish(self):
+        logger.debug(f'{self}.publish({self.kind}, {self.value})')
+        self.controller.publish(
+            self.controller.topic(self.kind, self.name),
+            str(self.value).encode('utf-8'))
+
+
+class BlockEnd(Element):
+    pass
+
+
+class Signal(Element):
+    initial_value = 'Hp0'
+
+    @classmethod
+    def act_on_button(cls, controller, button, value):
+        if value and (button in controller.elements['signal']) \
+                and controller.sticky_buttons['SGT'].state:
+            controller.sticky_buttons['SGT'].start()
+            controller.elements['signal'][button].start_change_shunting()
+
+    def __init__(self, controller, name):
+        super().__init__(controller, name)
+        self.value = 'Hp0'
+        self.aspects = []
 
     def alt(self):
         self.aspects += ['Zs1']
@@ -53,48 +89,41 @@ class Signal():
         self.aspects += ['Sh1']
         return self
 
-    def publish(self):
-        self.controller.publish(
-            self.controller.topic('signal', self.name),
-            self.aspect.encode('utf-8')
-        )
-
-    def set(self, aspect):
-        self.aspect = aspect
-        self.publish()
-
     def start_change_shunting(self):
         asyncio.create_task(self.change_shunting())
 
     async def change_shunting(self):
+        logger.debug(f'{self} = {self.value}')
         if 'Sh1' in self.aspects:
-            if self.aspect == 'Hp0':
-                self.aspect = 'Sh1'
+            if self.value == 'Hp0':
+                self.value = 'Sh1'
             else:
-                self.aspect = 'Hp0'
-            self.publish()
+                self.value = 'Hp0'
 
 
-class Switch():
+class Switch(Element):
+    initial_value = (0, 0)
+
+    @classmethod
+    def act_on_button(cls, controller, button, value):
+        if value and button in controller.elements['switch'] \
+                and controller.sticky_buttons['WGT'].state:
+            controller.sticky_buttons['WGT'].start()
+            controller.elements['switch'][button].start_change()
+
     def __init__(self, controller, name):
-        self.controller = controller
-        self.name = name
+        super().__init__(controller, name)
         self.position = 0
         self.moving = 0
-        self.controller.switches[self.name] = self
 
-    def __repr__(self):
-        return f'Switch<{self.name}>'
+    @property
+    def value(self):
+        return f'{self.position},{self.moving}'
 
-    def publish(self):
-        self.controller.publish(
-            self.controller.topic('switch', self.name),
-            f'{self.position},{self.moving}'.encode('utf-8')
-        )
-
-    def set(self, position, moving):
-        self.position = position
-        self.moving = moving
+    @value.setter
+    def value(self, value):
+        self.position = value[0]
+        self.moving = value[1]
         self.publish()
 
     def start_change(self):
@@ -144,10 +173,10 @@ class StickyButton():
 class Controller():
     def __init__(self, base_topic):
         self.client = MQTTClient()
-        self.block_ends = {}
+        self.connected = False
+        self.elementClass = {}
+        self.elements = {}
         self.sticky_buttons = {}
-        self.switches = {}
-        self.signals = {}
         self.base_topic = base_topic
         StickyButton(self, 'BlGT')
         StickyButton(self, 'SGT')
@@ -169,6 +198,8 @@ class Controller():
         """
         Publish a message and don't wait, "fire and forget" style.
         """
+        if not self.connected:
+            return
         logger.debug(f'Publishing {topic} = {value}')
         asyncio.create_task(self.client.publish(topic, value))
 
@@ -203,14 +234,11 @@ class Controller():
             self.reset_switch_group_button())
 
     async def handle(self):
-        for b in self.block_ends.values():
-            b.set(0)
+        self.connected = True
+        for cls in self.elementClass.values():
+            cls.initialize(self)
         for b in self.sticky_buttons.values():
             self.publish(self.topic('button', b.name), b'0')
-        for s in self.signals.values():
-            s.set('Hp0')
-        for s in self.switches.values():
-            s.set(0, 0)
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
@@ -228,20 +256,8 @@ class Controller():
                     if value:
                         self.sticky_buttons[button].start()
 
-                if value and button in self.switches \
-                        and self.sticky_buttons['WGT'].state:
-                    self.sticky_buttons['WGT'].start()
-                    self.switches[button].start_change()
-
-                if value and (button in self.signals) \
-                        and self.sticky_buttons['SGT'].state:
-                    self.sticky_buttons['SGT'].start()
-                    self.signals[button].start_change_shunting()
-
-                if value and button in self.block_ends \
-                        and self.sticky_buttons['BlGT'].state:
-                    self.sticky_buttons['SGT'].start()
-                    self.block_ends[button].set(1)
+                for cls in self.elementClass.values():
+                    cls.act_on_button(self, button, value)
 
             await self.client.unsubscribe(['frischen/time/#'])
             await self.client.disconnect()
