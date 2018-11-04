@@ -403,13 +403,13 @@
       this.symbol(this.tracks, 'frischen-block-arrow')
       let triangle = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
         .addClass('frischen-signal-red')
-      this.panel.client.subscribe('block', indicator, function(k, v) {
+      this.panel.client.subscribe('blockend', indicator, function(k, v) {
         if (stringToBoolean(v)) {
-          triangle.addClass('frischen-signal-red')
-          triangle.removeClass('frischen-signal-yellow')
-        } else {
           triangle.removeClass('frischen-signal-red')
           triangle.addClass('frischen-signal-yellow')
+        } else {
+          triangle.addClass('frischen-signal-red')
+          triangle.removeClass('frischen-signal-yellow')
         }
       })
       return this
@@ -562,13 +562,13 @@
     panel.pos(2, 14).trackH("1-6")
     // Streckentastensperre ausgelöst: Bezeichnungsfeld blinkt gelb
     panel.pos(2, 15).flipHV().trackHt()
-      .signalD("f").triangle("block")
-      .button("block-end-d").label("s", "v.Db")
+      .signalD("f").triangle("blockend-d")
+      .button("blockend-d").label("s", "v.Db")
 
     // track 2
     panel.pos(3, 0).trackHt()
-      .signalD("a").triangle("block")
-      .button("block-end-m").label("s", "v.Ma")
+      .signalD("a").triangle("blockend-m")
+      .button("blockend-m").label("s", "v.Ma")
     panel.pos(3, 1).trackH("2-1")
     panel.pos(3, 2).trackHt()
       .signalD("n2n3").signalA("A").signalH("A")

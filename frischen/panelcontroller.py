@@ -8,12 +8,31 @@ from hbmqtt.mqtt.constants import QOS_0
 logger = logging.getLogger(__name__)
 
 
+class BlockEnd():
+    def __init__(self, controller, name):
+        self.controller = controller
+        self.name = name
+        self.state = 0
+        self.controller.block_ends[self.name] = self
+
+    def publish(self):
+        self.controller.publish(
+            self.controller.topic('blockend', self.name),
+            str(self.state).encode('utf-8')
+        )
+
+    def set(self, state):
+        self.state = state
+        self.publish()
+
+
 class Signal():
     def __init__(self, controller, name):
         self.controller = controller
         self.name = name
         self.aspect = 'Hp0'
         self.aspects = []
+        self.controller.signals[self.name] = self
 
     def __repr__(self):
         return f'Signal<{self.name}>'
@@ -44,6 +63,9 @@ class Signal():
         self.aspect = aspect
         self.publish()
 
+    def start_change_shunting(self):
+        asyncio.create_task(self.change_shunting())
+
     async def change_shunting(self):
         if 'Sh1' in self.aspects:
             if self.aspect == 'Hp0':
@@ -59,6 +81,7 @@ class Switch():
         self.name = name
         self.position = 0
         self.moving = 0
+        self.controller.switches[self.name] = self
 
     def __repr__(self):
         return f'Switch<{self.name}>'
@@ -74,6 +97,11 @@ class Switch():
         self.moving = moving
         self.publish()
 
+    def start_change(self):
+        if self.moving:
+            return
+        asyncio.create_task(self.change())
+
     async def change(self):
         if self.moving == 1:
             return
@@ -86,18 +114,44 @@ class Switch():
         self.publish()
 
 
-class SwitchController():
+class StickyButton():
+    def __init__(self, controller, name):
+        self.controller = controller
+        self.name = name
+        self.task = None
+        self.state = 0
+        self.task = None
+        self.controller.sticky_buttons[self.name] = self
+
+    def __repr__(self):
+        return f'StickyButton<{self.name}>'
+
+    async def reset(self):
+        logger.debug(f'button reset for {self.name}: started')
+        await asyncio.sleep(5)
+        logger.debug(f'button reset for {self.name}: resetting')
+        self.state = 0
+        self.controller.publish(
+            self.controller.topic('button', self.name), b'0')
+        self.task = None
+
+    def start(self):
+        if self.task:
+            self.task.cancel()
+        self.task = asyncio.create_task(self.reset())
+
+
+class Controller():
     def __init__(self, base_topic):
         self.client = MQTTClient()
-        self.switch_group_button = 'WGT'
-        self.switch_group_button_state = 0
-        self.switch_group_button_reset = None
+        self.block_ends = {}
+        self.sticky_buttons = {}
         self.switches = {}
-        self.signal_group_button = 'SGT'
-        self.signal_group_button_state = 0
-        self.signal_group_button_reset = None
         self.signals = {}
         self.base_topic = base_topic
+        StickyButton(self, 'BlGT')
+        StickyButton(self, 'SGT')
+        StickyButton(self, 'WGT')
         logger.setLevel(logging.DEBUG)
 
     async def connect(self):
@@ -149,14 +203,14 @@ class SwitchController():
             self.reset_switch_group_button())
 
     async def handle(self):
-        self.publish(
-            self.topic('button', self.switch_group_button), b'0')
-        for s in self.switches.values():
-            s.set(0, 0)
-        self.publish(
-            self.topic('button', self.signal_group_button), b'0')
+        for b in self.block_ends.values():
+            b.set(0)
+        for b in self.sticky_buttons.values():
+            self.publish(self.topic('button', b.name), b'0')
         for s in self.signals.values():
             s.set('Hp0')
+        for s in self.switches.values():
+            s.set(0, 0)
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
@@ -169,28 +223,25 @@ class SwitchController():
                 button = self.subject(topic, 'button')
                 value = int(value)
 
-                if button == self.signal_group_button:
-                    self.signal_group_button_state = value
-                    if value == 1:
-                        self.start_reset_signal_group_button()
+                if button in self.sticky_buttons:
+                    self.sticky_buttons[button].state = value
+                    if value:
+                        self.sticky_buttons[button].start()
 
-                if button == self.switch_group_button:
-                    self.switch_group_button_state = value
-                    if value == 1:
-                        self.start_reset_switch_group_button()
+                if value and button in self.switches \
+                        and self.sticky_buttons['WGT'].state:
+                    self.sticky_buttons['WGT'].start()
+                    self.switches[button].start_change()
 
-                if button in self.switches:
-                    if self.switch_group_button_state == 1 and \
-                            value == 1:
-                        self.start_reset_signal_group_button()
-                        asyncio.create_task(self.switches[button].change())
+                if value and (button in self.signals) \
+                        and self.sticky_buttons['SGT'].state:
+                    self.sticky_buttons['SGT'].start()
+                    self.signals[button].start_change_shunting()
 
-                if button in self.signals:
-                    if self.signal_group_button_state == 1 and \
-                            value == 1:
-                        self.start_reset_signal_group_button()
-                        asyncio.create_task(
-                            self.signals[button].change_shunting())
+                if value and button in self.block_ends \
+                        and self.sticky_buttons['BlGT'].state:
+                    self.sticky_buttons['SGT'].start()
+                    self.block_ends[button].set(1)
 
             await self.client.unsubscribe(['frischen/time/#'])
             await self.client.disconnect()
