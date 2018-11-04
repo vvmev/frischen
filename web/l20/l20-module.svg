@@ -29,7 +29,7 @@
      inkscape:cx="58.969169"
      inkscape:cy="56.692917"
      inkscape:document-units="px"
-     inkscape:current-layer="layer29"
+     inkscape:current-layer="layer26"
      showgrid="true"
      inkscape:window-width="1574"
      inkscape:window-height="1010"
@@ -179,10 +179,9 @@
      inkscape:groupmode="layer"
      id="layer26"
      inkscape:label="frischen-label-c"
-     style="display:none">
+     style="display:inline">
     <rect
        style="display:inline"
-       class="frischen-label"
        inkscape:label="#rect4745"
        id="rect4604"
        width="16.199492"
@@ -217,7 +216,8 @@
   <g
      inkscape:groupmode="layer"
      id="layer29"
-     inkscape:label="frischen-counter">
+     inkscape:label="frischen-counter"
+     style="display:none">
     <rect
        inkscape:label="#rect4729"
        y="11.5"
