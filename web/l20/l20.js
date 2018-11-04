@@ -13,12 +13,16 @@
   });
   const contentLoaded = thenify('DOMContentLoaded', /^(?:interactive|complete)$/);
 
-  let stringToBoolean = function(string){
+  let stringToBoolean = function(string) {
       switch(string.toLowerCase().trim()){
-          case "true": case "yes": case "1": return true;
-          case "false": case "no": case "0": case null: return false;
+          case "t": case "true": case "yes": case "1": return true;
+          case "f": case "false": case "no": case "0": case null: return false;
           default: return Boolean(string);
       }
+  }
+
+  let stringToBooleanArray = function(string) {
+    return string.split(",").map(stringToBoolean)
   }
 
   /**
@@ -45,10 +49,6 @@
       this.topic = `frischen/${name}/panel`;
       this.subscriptions = {}
       this.is_connected = false
-
-      this.subscriptions['frischen/time/1hz'] = [m => {
-        // toggle blinker
-      }]
 
       this.client.onConnectionLost = resp => this.onConnectionLost(resp)
       this.client.onMessageArrived = msg => this.onMessageArrived(msg)
@@ -101,7 +101,10 @@
     }
 
     subscribe(kind, subject, callback) {
-      let k = `${this.topic}/${kind}/${subject}`
+      this.subscribeGeneral(`${this.topic}/${kind}/${subject}`, callback)
+    }
+
+    subscribeGeneral(k, callback) {
       if (this.subscriptions[k] === undefined) {
         this.subscriptions[k] = new Array()
       }
@@ -109,6 +112,26 @@
       if (this.is_connected) {
         for (let c of this.subscriptions[k]) {
           this.client.subscribe(k)
+        }
+      }
+    }
+  }
+
+
+  let Blinker = class {
+    constructor(elements, cssClass) {
+      this.elements = elements
+      this.cssClass = cssClass
+    }
+
+    change(v) {
+      if (stringToBoolean(v)) {
+        for (let e of this.elements) {
+          e.addClass(this.cssClass)
+        }
+      } else {
+        for (let e of this.elements) {
+          e.removeClass(this.cssClass)
         }
       }
     }
@@ -138,13 +161,20 @@
 
     subscribeTrack(indicator, elements) {
       this.panel.client.subscribe('track', indicator, function(k, v) {
-        if (stringToBoolean(v)) {
+        for (let e of elements) {
+          e.removeClass('frischen-track-locked')
+          e.removeClass('frischen-track-occupied')
+        }
+        let c = undefined
+        switch(v) {
+          case 'l':
+            c = 'frischen-track-locked'; break
+          case 'o':
+            c = 'frischen-track-occupied'; break
+        }
+        if (c !== undefined) {
           for (let e of elements) {
-            e.addClass('frischen-track-occupied')
-          }
-        } else {
-          for (let e of elements) {
-            e.removeClass('frischen-track-occupied')
+            e.addClass(c)
           }
         }
       })
@@ -210,9 +240,9 @@
     }
 
     label(size, name) {
-      let label = this.panel.symbols['frischen-label-' + size].clone()
-      this.labels.put(label)
-      let pos = label.rbox(this.module)
+      this.label = this.panel.symbols['frischen-label-' + size].clone()
+      this.labels.put(this.label)
+      let pos = this.label.rbox(this.module)
       let text = this.module.plain(name)
       text.addClass('frischen-label')
       text.attr('font-family', null)
@@ -222,30 +252,45 @@
       return this
     }
 
-    platform(name) {
+    platform(indicator, name) {
       this.symbol(this.tracks, 'frischen-platform')
       this.label("c", name)
+      this.subscribeTrack(indicator, [this.label])
       return this
     }
 
     switch(indicator) {
+      let position = [false, false]
+      let self = this
       this.symbol(this.tracks, 'frischen-track-h')
       this.symbol(this.tracks, 'frischen-track-d')
       let leg1 = this.symbol(this.indicators, 'frischen-track-indicator-d1')
       let leg2 = this.symbol(this.indicators, 'frischen-track-indicator-h1')
       leg2.addClass('frischen-switch-position')
-      let occupied1 = this.symbol(this.indicators, 'frischen-track-indicator-d2')
-      let occupied2 = this.symbol(this.indicators, 'frischen-track-indicator-h2')
+      this.blinker = undefined
+      // also: blinks red if trailing point movement throws switch
+      let occupied = [
+        this.symbol(this.indicators, 'frischen-track-indicator-d2'),
+        this.symbol(this.indicators, 'frischen-track-indicator-h2'),
+      ]
       this.panel.client.subscribe('switch', indicator, function(k, v) {
-        if (stringToBoolean(v)) {
-          leg1.addClass('frischen-switch-position')
+        position = stringToBooleanArray(v)
+        let active
+        if (position[0]) {
+          active = leg1.addClass('frischen-switch-position')
           leg2.removeClass('frischen-switch-position')
         } else {
           leg1.removeClass('frischen-switch-position')
-          leg2.addClass('frischen-switch-position')
+          active = leg2.addClass('frischen-switch-position')
+        }
+        if (position[1]) {
+          self.blinker = self.panel.addBlinker([active], 'frischen-switch-position')
+        } else if (self.blinker !== undefined){
+          self.panel.removeBlinker(self.blinker)
+          self.blinker = undefined
         }
       })
-      this.subscribeTrack(indicator, [occupied1, occupied2])
+      this.subscribeTrack(indicator, occupied)
       return this
     }
 
@@ -254,8 +299,9 @@
       let light = this.symbol(this.indicators, 'frischen-alt-signal-indicator')
       this.panel.client.subscribe('signal', indicator, function(k, v) {
         switch(v) {
+          case 'Hp0-Zs1':
           case 'Zs1':
-            light.attr('class', 'frischen-signal-white'); break
+            light.attr('class', 'frischen-signal-yellow'); break
           default:
             light.attr('class', ''); break
         }
@@ -300,9 +346,10 @@
       let light = this.symbol(this.indicators, 'frischen-shunting-signal-indicator')
       this.panel.client.subscribe('signal', indicator, function(k, v) {
         switch(v) {
+          case 'Hp0-Sh1':
           case 'Sh1':
           case 'Ra12':
-            light.attr('class', 'frischen-signal-white'); break
+            light.attr('class', 'frischen-signal-yellow'); break
           default:
             light.attr('class', ''); break
         }
@@ -343,8 +390,17 @@
 
     triangle(indicator) {
       this.symbol(this.tracks, 'frischen-block-arrow')
-      let occupied = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
-      this.subscribeTrack(indicator, [occupied])
+      let triangle = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
+        .addClass('frischen-signal-red')
+      this.panel.client.subscribe('block', indicator, function(k, v) {
+        if (stringToBoolean(v)) {
+          triangle.addClass('frischen-signal-red')
+          triangle.removeClass('frischen-signal-yellow')
+        } else {
+          triangle.removeClass('frischen-signal-red')
+          triangle.addClass('frischen-signal-yellow')
+        }
+      })
       return this
     }
   }
@@ -364,6 +420,13 @@
       this.paneldrawing = null
       this.symbols = {}
       this.client = client
+      this.blinking = []
+      let blinking = this.blinking
+      this.client.subscribeGeneral('frischen/time/1hz', function(k, v) {
+        for (let b of blinking) {
+          b.change(v)
+        }
+      })
 
       this.paneldrawing = SVG(id)
       this.paneldrawing.size(this.moduleWidth*this.cols + 2*this.border,
@@ -427,6 +490,17 @@
         this.modules[row][col] = new this.PanelPos(row, col)
       return this.modules[row][col]
     }
+
+    addBlinker(elements, cssClass) {
+      let blinker = new Blinker(elements, cssClass)
+      this.blinking.push(blinker)
+      return blinker
+    }
+
+    removeBlinker(blinker) {
+      let i = this.blinking.indexOf(blinker)
+      if (i !== -1) this.blinking.splice(i, 1)
+    }
   }
 
   /**
@@ -436,6 +510,7 @@
     let panel = new Panel(6, 16, 66, 66, 'panel', new PanelClient('etal'))
     panel.createSymbolsFromSVG(svg)
 
+    // outer buttons
     panel.pos(0, 3).flipHV().button("WGT").label("l", "WGT")
     panel.pos(0, 4).flipHV().button("HaGT").label("l", "HaGT")
     panel.pos(0, 5).flipHV().button("SGT").label("l", "SGT")
@@ -447,72 +522,75 @@
     panel.pos(0, 13).flipHV().button("AsLT").label("l", "AsLT")
     panel.pos(0, 14).flipHV().button("BlGT").label("l", "BlGT")
 
+    // counters
     panel.pos(1, 8).tower().label("s", "Ef")
     panel.pos(1, 9).flipHV().counter("FHT")
     panel.pos(1, 10).flipHV().counter("ErsGT")
     panel.pos(1, 11).flipHV().counter("WHT")
     panel.pos(1, 12).flipHV().counter("AsT")
 
-    panel.pos(2, 0).flipHV().triangle("199").label("l", "n.Ma")
-    panel.pos(2, 1).trackH("198")
-    panel.pos(2, 2).trackH("198").button("p1p3").label("l", "p1/p3")
-    panel.pos(2, 3).trackH("198")
+    // track 1
+    panel.pos(2, 0).flipHV().triangle("block").label("l", "n.Ma")
+    panel.pos(2, 1).trackH("1-1")
+    panel.pos(2, 2).trackH("1-1").button("p1p3").label("l", "p1/p3")
+    panel.pos(2, 3).trackH("1-1")
     panel.pos(2, 4).flipV().switch("W1").button("W1").label("s", "1")
     panel.pos(2, 5).flipHV().trackHt()
-      .signalS("101").signalA("altP1").signalH("P1")
+      .signalS("P1").signalA("P1").signalH("P1")
       .button("P1").label("l", "P1")
-    panel.pos(2, 6).trackH("1")
-    panel.pos(2, 7).trackH("1")
-    panel.pos(2, 8).trackH("1").platform("1")
-    panel.pos(2, 9).trackH("1")
-    panel.pos(2, 10).trackH("1")
-    panel.pos(2, 11).trackH("1")
+    panel.pos(2, 6).trackH("1-4")
+    panel.pos(2, 7).trackH("1-4")
+    panel.pos(2, 8).trackH("1-4").platform("1-4", "1")
+    panel.pos(2, 9).trackH("1-4")
+    panel.pos(2, 10).trackH("1-4")
+    panel.pos(2, 11).trackH("1-4")
     panel.pos(2, 12).flipHV().switch("W13").button("W13").label("s", "13")
-    panel.pos(2, 13).trackH("102")
-    panel.pos(2, 14).flipHV()
+    panel.pos(2, 13).flipHV()
       .signalD("p1p3").signalA("altF").signalH("F")
       .button("F").label("l", "F")
-      panel.pos(2, 15).flipHV().trackHt()
-        .signalD("f").triangle("100")
-        .button("block-end-d").label("s", "v.Db")
+    panel.pos(2, 14).trackH("1-6")
+    // Streckentastensperre ausgelöst: Bezeichnungsfeld blinkt gelb
+    panel.pos(2, 15).flipHV().trackHt()
+      .signalD("f").triangle("block")
+      .button("block-end-d").label("s", "v.Db")
 
+    // track 2
     panel.pos(3, 0).trackHt()
-      .signalD("a").triangle("299")
+      .signalD("a").triangle("block")
       .button("block-end-m").label("s", "v.Ma")
-    panel.pos(3, 1).trackH("298")
+    panel.pos(3, 1).trackH("2-1")
     panel.pos(3, 2).trackHt()
-      .signalD("n2n3").signalA("altA").signalH("A")
+      .signalD("n2n3").signalA("A").signalH("A")
       .button("A").label("l", "A")
-    panel.pos(3, 3).trackH("297")
+    panel.pos(3, 3).trackH("2-2")
     panel.pos(3, 4).flipH().switch("W2").button("W2").label("s", "2")
-    panel.pos(3, 5).trackH("296")
+    panel.pos(3, 5).trackH("2-3")
     panel.pos(3, 6).flipV().switch("W3").button("W3").label("s", "3")
-    panel.pos(3, 7).trackH("2")
-    panel.pos(3, 8).flipV().trackH("2").platform("2")
+    panel.pos(3, 7).trackH("2-4")
+    panel.pos(3, 8).flipV().trackH("2-4").platform("2-4", "2")
     panel.pos(3, 9).trackHt()
-      .signalS("201").signalA("altN2").signalH("N2")
+      .signalS("N2").signalA("N2").signalH("N2")
       .button("N2").label("l", "N2")
     panel.pos(3, 10).flipHV().switch("W11").button("W11").label("s", "11")
-    panel.pos(3, 11).trackH("202")
+    panel.pos(3, 11).trackH("2-5")
     panel.pos(3, 12).switch("W12").button("W12").label("s", "12")
-    panel.pos(3, 13).trackH("201")
-    panel.pos(3, 14).trackH("201").button("n2n3").label("l", "n2/n3")
+    panel.pos(3, 13).trackH("2-6")
+    panel.pos(3, 14).trackH("2-6").button("n2n3").label("l", "n2/n3")
+    // Streckenwiederholungsperre Beschriftungsfeld: rot
     panel.pos(3, 15).triangle("200").label("l", "n.Db")
 
-    panel.pos(4, 4).flipHV().trackD("4.90")
-    panel.pos(4, 5).trackH("4.90")
+    // track 3
+    panel.pos(4, 5).trackHt()
     panel.pos(4, 6).flipH().switch("W4").button("W4").label("s", "4")
     panel.pos(4, 7).flipHV().trackHt()
-      .signalS("103").signalA("altP3").signalH("P3")
+      .signalS("P3").signalA("P3").signalH("P3")
       .button("P3").label("l", "P3")
-    panel.pos(4, 8).trackH("3").platform("3")
+    panel.pos(4, 8).trackH("3-4").platform("3-4", "3")
     panel.pos(4, 9).trackHt()
-      .signalS("203").signalA("altN3").signalH("N3")
+      .signalS("N3").signalA("N3").signalH("N3")
       .button("N3").label("l", "N3")
     panel.pos(4, 10).switch("W10").button("W10").label("s", "10")
     panel.pos(4, 11).trackHt()
-
-    panel.pos(5, 4).trackV("4.90")
   }
 
   Promise.all([loadUri("l20-module.svg"), contentLoaded])
