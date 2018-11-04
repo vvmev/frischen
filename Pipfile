@@ -8,6 +8,7 @@ colored = "*"
 paho-mqtt = "*"
 graphviz = "*"
 pyyaml = "*"
+hbmqtt = "*"
 
 [dev-packages]
 
