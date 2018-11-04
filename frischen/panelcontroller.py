@@ -19,26 +19,26 @@ class Switch():
         return f'Switch<{self.name}>'
 
     def publish(self):
-        c = self.controller
-        return c.client.publish(
-            f'{c.base_topic}/switch/{self.name}',
+        self.controller.publish(
+            self.controller.topic('switch', self.name),
             f'{self.position},{self.moving}'.encode('utf-8')
         )
 
     def set(self, position, moving):
         self.position = position
         self.moving = moving
-        return asyncio.ensure_future(self.publish())
+        self.publish()
 
     async def change(self):
         if self.moving == 1:
             return
         self.moving = 1
         self.position = 1 if self.position == 0 else 0
-        await self.publish()
+        self.publish()
+
         await asyncio.sleep(6)
         self.moving = 0
-        await self.publish()
+        self.publish()
 
 
 class SwitchController():
@@ -48,6 +48,7 @@ class SwitchController():
         self.switch_group_button_state = '0'
         self.switches = {}
         self.base_topic = base_topic
+        logger.setLevel(logging.DEBUG)
 
     async def connect(self):
         await self.client.connect('mqtt://localhost/')
@@ -60,7 +61,16 @@ class SwitchController():
         i = topic.find(base)
         return topic[len(base)+1:] if i == 0 else None
 
+    def publish(self, topic, value):
+        """
+        Publish a message and don't wait, "fire and forget" style.
+        """
+        logger.debug(f'Publishing {topic} = {value}')
+        asyncio.create_task(self.client.publish(topic, value))
+
     async def handle(self):
+        self.publish(
+            self.topic('button', self.switch_group_button), b'0')
         for s in self.switches.values():
             s.set(0, 0)
         await self.client.subscribe([
