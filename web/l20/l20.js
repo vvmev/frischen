@@ -187,16 +187,27 @@
       return where.put(this.panel.symbols[symbol].clone())
     }
 
-    button(actuator) {
+    button(actuator, sticky) {
       let button = this.symbol(this.buttons, 'frischen-button')
       let state = '0'
       let b = this.buttons.rect(this.panel.moduleWidth, this.panel.moduleHeight)
       b.addClass('frischen-clicktarget')
-      b.on('click', e => {
-        console.log(`button ${actuator}`)
-        state = state == '0' ? '1' : '0'
-        this.panel.client.send('button', actuator, state)
-      })
+      if (sticky) {
+        b.on('click', e => {
+          console.log(`button ${actuator}`)
+          state = state == '0' ? '1' : '0'
+          this.panel.client.send('button', actuator, state)
+        })
+      } else {
+        b.on('mousedown', e => {
+          state = '1'
+          this.panel.client.send('button', actuator, state)
+        })
+        b.on('mouseup', e => {
+          state = '0'
+          this.panel.client.send('button', actuator, state)
+        })
+      }
       this.panel.client.subscribe('button', actuator, function(k, v) {
         state = v
         if (stringToBoolean(v)) {
@@ -511,16 +522,16 @@
     panel.createSymbolsFromSVG(svg)
 
     // outer buttons
-    panel.pos(0, 3).flipHV().button("WGT").label("l", "WGT")
-    panel.pos(0, 4).flipHV().button("HaGT").label("l", "HaGT")
-    panel.pos(0, 5).flipHV().button("SGT").label("l", "SGT")
+    panel.pos(0, 3).flipHV().button("WGT", true).label("l", "WGT")
+    panel.pos(0, 4).flipHV().button("HaGT", true).label("l", "HaGT")
+    panel.pos(0, 5).flipHV().button("SGT", true).label("l", "SGT")
     panel.pos(0, 7).flipHV().counter("Af").label("s", "Af")
-    panel.pos(0, 9).flipHV().button("FHT").label("l", "FHT")
-    panel.pos(0, 10).flipHV().button("ErsGT").label("l", "ErsGT")
-    panel.pos(0, 11).flipHV().button("WHT").label("l", "WHT")
-    panel.pos(0, 12).flipHV().button("AsT").label("l", "AsT")
-    panel.pos(0, 13).flipHV().button("AsLT").label("l", "AsLT")
-    panel.pos(0, 14).flipHV().button("BlGT").label("l", "BlGT")
+    panel.pos(0, 9).flipHV().button("FHT", true).label("l", "FHT")
+    panel.pos(0, 10).flipHV().button("ErsGT", true).label("l", "ErsGT")
+    panel.pos(0, 11).flipHV().button("WHT", true).label("l", "WHT")
+    panel.pos(0, 12).flipHV().button("AsT", true).label("l", "AsT")
+    panel.pos(0, 13).flipHV().button("AsLT", true).label("l", "AsLT")
+    panel.pos(0, 14).flipHV().button("BlGT", true).label("l", "BlGT")
 
     // counters
     panel.pos(1, 8).tower().label("s", "Ef")
