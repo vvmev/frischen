@@ -63,10 +63,13 @@ class Signal(Element):
 
     @classmethod
     def act_on_button(cls, controller, button, value):
-        if value and (button in controller.elements['signal']) \
-                and controller.sticky_buttons['SGT'].state:
-            controller.sticky_buttons['SGT'].start()
-            controller.elements['signal'][button].start_change_shunting()
+        if value and button in controller.elements['signal']:
+            if controller.sticky_buttons['SGT'].state:
+                controller.sticky_buttons['SGT'].start()
+                controller.elements['signal'][button].start_change_shunting()
+            if controller.sticky_buttons['HaGT'].state:
+                controller.sticky_buttons['HaGT'].start()
+                controller.elements['signal'][button].start_halt()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
@@ -89,6 +92,10 @@ class Signal(Element):
         self.aspects += ['Sh1']
         return self
 
+    def start_halt(self):
+        if self.value != 'Hp0':
+            self.value = 'Hp0'
+
     def start_change_shunting(self):
         asyncio.create_task(self.change_shunting())
 
@@ -97,7 +104,7 @@ class Signal(Element):
         if 'Sh1' in self.aspects:
             if self.value == 'Hp0':
                 self.value = 'Sh1'
-            else:
+            elif self.value == 'Sh1':
                 self.value = 'Hp0'
 
 
@@ -155,14 +162,22 @@ class StickyButton():
     def __repr__(self):
         return f'StickyButton<{self.name}>'
 
+    def publish(self):
+        self.controller.publish(
+            self.controller.topic('button', self.name), b'0')
+
+    def clear(self, cancel=True):
+        if cancel and self.task:
+            self.task.cancel()
+        self.task = None
+        self.state = 0
+        self.publish()
+
     async def reset(self):
         logger.debug(f'button reset for {self.name}: started')
         await asyncio.sleep(5)
         logger.debug(f'button reset for {self.name}: resetting')
-        self.state = 0
-        self.controller.publish(
-            self.controller.topic('button', self.name), b'0')
-        self.task = None
+        self.clear(cancel=False)
 
     def start(self):
         if self.task:
@@ -179,6 +194,7 @@ class Controller():
         self.sticky_buttons = {}
         self.base_topic = base_topic
         StickyButton(self, 'BlGT')
+        StickyButton(self, 'HaGT')
         StickyButton(self, 'SGT')
         StickyButton(self, 'WGT')
         logger.setLevel(logging.DEBUG)
@@ -238,7 +254,7 @@ class Controller():
         for cls in self.elementClass.values():
             cls.initialize(self)
         for b in self.sticky_buttons.values():
-            self.publish(self.topic('button', b.name), b'0')
+            b.clear()
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
@@ -255,6 +271,9 @@ class Controller():
                     self.sticky_buttons[button].state = value
                     if value:
                         self.sticky_buttons[button].start()
+                        for b in self.sticky_buttons.keys():
+                            if b != button:
+                                self.sticky_buttons[b].clear()
 
                 for cls in self.elementClass.values():
                     cls.act_on_button(self, button, value)
