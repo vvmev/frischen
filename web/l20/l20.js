@@ -314,14 +314,9 @@
         switch(v) {
           case 'Hp0-Zs1':
           case 'Zs1':
-            self.blinker = self.panel.addBlinker(
-              [light], 'frischen-signal-yellow')
+            light.addClass('frischen-signal-yellow')
             break
           default:
-            if (self.blinker !== undefined){
-              self.panel.removeBlinker(self.blinker)
-              self.blinker = undefined
-            }
             light.attr('class', '');
             break
         }
