@@ -157,6 +157,7 @@
       this.indicators = this.inside.group().addClass('frischen-indicator')
       this.labels = this.inside.group().addClass('frischen-label')
       this.buttons = this.inside.group().addClass('frischen-button')
+      this.blinker = undefined
     }
 
     subscribeTrack(indicator, elements) {
@@ -278,7 +279,6 @@
       let leg1 = this.symbol(this.indicators, 'frischen-track-indicator-d1')
       let leg2 = this.symbol(this.indicators, 'frischen-track-indicator-h1')
       leg2.addClass('frischen-switch-position')
-      this.blinker = undefined
       // also: blinks red if trailing point movement throws switch
       let occupied = [
         this.symbol(this.indicators, 'frischen-track-indicator-d2'),
@@ -306,15 +306,24 @@
     }
 
     signalA(indicator) {
+      let self = this
       this.symbol(this.tracks, 'frischen-alt-signal')
       let light = this.symbol(this.indicators, 'frischen-alt-signal-indicator')
+      this.blinker = undefined
       this.panel.client.subscribe('signal', indicator, function(k, v) {
         switch(v) {
           case 'Hp0-Zs1':
           case 'Zs1':
-            light.attr('class', 'frischen-signal-yellow'); break
+            self.blinker = self.panel.addBlinker(
+              [light], 'frischen-signal-yellow')
+            break
           default:
-            light.attr('class', ''); break
+            if (self.blinker !== undefined){
+              self.panel.removeBlinker(self.blinker)
+              self.blinker = undefined
+            }
+            light.attr('class', '');
+            break
         }
       })
       return this

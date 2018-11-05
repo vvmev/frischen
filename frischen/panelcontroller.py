@@ -16,6 +16,7 @@ class Element():
         self.kind = self.__class__.__name__.lower()
         self.name = name
         self.state = 0
+        self.task = None
         if self.kind not in self.controller.elements:
             logger.debug(f'my name is {self.kind}')
             self.controller.elementClass[self.kind] = self.__class__
@@ -70,6 +71,9 @@ class Signal(Element):
             if controller.sticky_buttons['HaGT'].state:
                 controller.sticky_buttons['HaGT'].start()
                 controller.elements['signal'][button].start_halt()
+            if controller.sticky_buttons['ErsGT'].state:
+                controller.sticky_buttons['ErsGT'].start()
+                controller.elements['signal'][button].start_alt()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
@@ -92,7 +96,20 @@ class Signal(Element):
         self.aspects += ['Sh1']
         return self
 
+    def start_alt(self):
+        if 'Zs1' in self.aspects and self.value == 'Hp0':
+            if self.task:
+                self.task.cancel()
+            self.task = asyncio.create_task(self.change_alt())
+
+    async def change_alt(self):
+        self.value = 'Zs1'
+        await asyncio.sleep(15)
+        self.value = 'Hp0'
+
     def start_halt(self):
+        if self.task:
+            self.task.cancel()
         if self.value != 'Hp0':
             self.value = 'Hp0'
 
@@ -194,6 +211,7 @@ class Controller():
         self.sticky_buttons = {}
         self.base_topic = base_topic
         StickyButton(self, 'BlGT')
+        StickyButton(self, 'ErsGT')
         StickyButton(self, 'HaGT')
         StickyButton(self, 'SGT')
         StickyButton(self, 'WGT')
