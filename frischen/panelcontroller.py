@@ -32,8 +32,7 @@ class Element():
     @classmethod
     def act_on_button(cls, controller, button, value):
         if value and button in controller.elements['blockend'] \
-                and controller.sticky_buttons['BlGT'].state:
-            controller.sticky_buttons['BlGT'].start()
+                and controller.is_outer_button('BlGT'):
             controller.elements['blockend'][button].value = 1
 
     @property
@@ -65,14 +64,11 @@ class Signal(Element):
     @classmethod
     def act_on_button(cls, controller, button, value):
         if value and button in controller.elements['signal']:
-            if controller.sticky_buttons['SGT'].state:
-                controller.sticky_buttons['SGT'].start()
+            if controller.is_outer_button('SGT'):
                 controller.elements['signal'][button].start_change_shunting()
-            if controller.sticky_buttons['HaGT'].state:
-                controller.sticky_buttons['HaGT'].start()
+            if controller.is_outer_button('HaGT'):
                 controller.elements['signal'][button].start_halt()
-            if controller.sticky_buttons['ErsGT'].state:
-                controller.sticky_buttons['ErsGT'].start()
+            if controller.is_outer_button('ErsGT'):
                 controller.elements['signal'][button].start_alt()
 
     def __init__(self, controller, name):
@@ -114,15 +110,9 @@ class Signal(Element):
             self.value = 'Hp0'
 
     def start_change_shunting(self):
-        asyncio.create_task(self.change_shunting())
-
-    async def change_shunting(self):
-        logger.debug(f'{self} = {self.value}')
         if 'Sh1' in self.aspects:
             if self.value == 'Hp0':
                 self.value = 'Sh1'
-            elif self.value == 'Sh1':
-                self.value = 'Hp0'
 
 
 class Switch(Element):
@@ -131,8 +121,7 @@ class Switch(Element):
     @classmethod
     def act_on_button(cls, controller, button, value):
         if value and button in controller.elements['switch'] \
-                and controller.sticky_buttons['WGT'].state:
-            controller.sticky_buttons['WGT'].start()
+                and controller.is_outer_button('WGT'):
             controller.elements['switch'][button].start_change()
 
     def __init__(self, controller, name):
@@ -167,39 +156,17 @@ class Switch(Element):
         self.publish()
 
 
-class StickyButton():
+class OuterButton():
     def __init__(self, controller, name):
         self.controller = controller
         self.name = name
         self.task = None
         self.state = 0
         self.task = None
-        self.controller.sticky_buttons[self.name] = self
+        self.controller.outer_buttons[self.name] = self
 
     def __repr__(self):
-        return f'StickyButton<{self.name}>'
-
-    def publish(self):
-        self.controller.publish(
-            self.controller.topic('button', self.name), b'0')
-
-    def clear(self, cancel=True):
-        if cancel and self.task:
-            self.task.cancel()
-        self.task = None
-        self.state = 0
-        self.publish()
-
-    async def reset(self):
-        logger.debug(f'button reset for {self.name}: started')
-        await asyncio.sleep(5)
-        logger.debug(f'button reset for {self.name}: resetting')
-        self.clear(cancel=False)
-
-    def start(self):
-        if self.task:
-            self.task.cancel()
-        self.task = asyncio.create_task(self.reset())
+        return f'OuterButton<{self.name}>'
 
 
 class Controller():
@@ -208,13 +175,13 @@ class Controller():
         self.connected = False
         self.elementClass = {}
         self.elements = {}
-        self.sticky_buttons = {}
+        self.outer_buttons = {}
         self.base_topic = base_topic
-        StickyButton(self, 'BlGT')
-        StickyButton(self, 'ErsGT')
-        StickyButton(self, 'HaGT')
-        StickyButton(self, 'SGT')
-        StickyButton(self, 'WGT')
+        OuterButton(self, 'BlGT')
+        OuterButton(self, 'ErsGT')
+        OuterButton(self, 'HaGT')
+        OuterButton(self, 'SGT')
+        OuterButton(self, 'WGT')
         logger.setLevel(logging.DEBUG)
 
     async def connect(self):
@@ -236,6 +203,17 @@ class Controller():
             return
         logger.debug(f'Publishing {topic} = {value}')
         asyncio.create_task(self.client.publish(topic, value))
+
+    def is_outer_button(self, button):
+        """
+        Return true only if this outer button is pushed, but no other.
+        """
+        if not self.outer_buttons[button].state:
+            return False
+        for b in self.outer_buttons.values():
+            if b.state and b.name != button:
+                return False
+        return True
 
     async def reset_signal_group_button(self):
         logger.debug(f'Started signal_group_button timeout')
@@ -271,8 +249,6 @@ class Controller():
         self.connected = True
         for cls in self.elementClass.values():
             cls.initialize(self)
-        for b in self.sticky_buttons.values():
-            b.clear()
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
@@ -285,13 +261,8 @@ class Controller():
                 button = self.subject(topic, 'button')
                 value = int(value)
 
-                if button in self.sticky_buttons:
-                    self.sticky_buttons[button].state = value
-                    if value:
-                        self.sticky_buttons[button].start()
-                        for b in self.sticky_buttons.keys():
-                            if b != button:
-                                self.sticky_buttons[b].clear()
+                if button in self.outer_buttons:
+                    self.outer_buttons[button].state = value
 
                 for cls in self.elementClass.values():
                     cls.act_on_button(self, button, value)
