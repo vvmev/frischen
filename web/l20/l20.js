@@ -138,6 +138,89 @@
   }
 
 
+  let PanelButtonManager = class {
+    constructor() {
+      this.buttons = []
+      this.timer = undefined
+      this.timeout = 5000
+    }
+    add(button) {
+      this.buttons.push(button)
+    }
+    mousedown() {
+      if (this.timer !== undefined) {
+        clearTimeout(this.timer)
+      }
+      this.timer = setTimeout(() => {
+        for (button of this.buttons) {
+          if (button.locked) {
+            button.pressed = false
+            button.locked = false
+            button.updateCallback(button.pressed)
+          }
+        }
+        this.timer = undefined
+      }, this.timeout)
+    }
+  }
+
+  let panel_button_manager = new PanelButtonManager()
+
+  /**
+   * A combination momentary and regular switch. Pressing the mouse on the
+   * element will engange the switch. A double click will lock it in the on
+   * position, and pressing the mouse again will release it once the mouse
+   * button is lifted.
+   */
+  let PanelButton = class {
+    constructor(element, updateCallback) {
+      this.pressed = false
+      this.locked = false
+      this.updateCallback = updateCallback
+      this.timer = undefined
+      panel_button_manager.add(this)
+      element.on('mousedown', e => {
+        if (!this.pressed) {
+          this.pressed = true
+          this.updateCallback(this.pressed)
+        }
+        panel_button_manager.mousedown()
+        e.stopPropagation()
+        e.preventDefault()
+      })
+      element.on('mouseup', e => {
+        if (this.locked) {
+          this.pressed = false
+          this.locked = false
+          this.updateCallback(this.pressed)
+        } else {
+          if (this.timer === undefined) {
+            this.timer = setTimeout(() => {
+              this.pressed = false
+              this.timer = undefined
+              this.updateCallback(this.pressed)
+            }, 250)
+          } else {
+            clearTimeout(this.timer)
+            this.timer = undefined
+            this.locked = true
+          }
+        }
+        e.stopPropagation()
+        e.preventDefault()
+      })
+      element.on('click', e => {
+        e.stopPropagation()
+        e.preventDefault()
+      })
+      element.on('dblclick', e => {
+        e.stopPropagation()
+        e.preventDefault()
+      })
+    }
+  }
+
+
   /**
    * One module position on the panel
    */
@@ -157,6 +240,8 @@
       this.indicators = this.inside.group().addClass('frischen-indicator')
       this.labels = this.inside.group().addClass('frischen-label')
       this.buttons = this.inside.group().addClass('frischen-button')
+      this.labeltext = this.module.group()
+      this.clicktarget = this.module.group()
       this.blinker = undefined
     }
 
@@ -188,34 +273,19 @@
       return where.put(this.panel.symbols[symbol].clone())
     }
 
-    button(actuator, sticky) {
+    button(actuator) {
       let button = this.symbol(this.buttons, 'frischen-button')
       let state = '0'
-      let b = this.buttons.rect(this.panel.moduleWidth, this.panel.moduleHeight)
+      let b = this.clicktarget.rect(this.panel.moduleWidth, this.panel.moduleHeight)
       b.addClass('frischen-clicktarget')
-      if (sticky) {
-        b.on('click', e => {
-          console.log(`button ${actuator}`)
-          state = state == '0' ? '1' : '0'
-          this.panel.client.send('button', actuator, state)
-        })
-      } else {
-        b.on('mousedown', e => {
-          state = '1'
-          this.panel.client.send('button', actuator, state)
-        })
-        b.on('mouseup', e => {
-          state = '0'
-          this.panel.client.send('button', actuator, state)
-        })
-      }
-      this.panel.client.subscribe('button', actuator, function(k, v) {
-        state = v
-        if (stringToBoolean(v)) {
+      let pb = new PanelButton(b, v => {
+        state = v ? '1' : '0'
+        if (v) {
           button.addClass('frischen-button-pressed')
         } else {
           button.removeClass('frischen-button-pressed')
         }
+        this.panel.client.send('button', actuator, state)
       })
       return this
     }
@@ -255,7 +325,7 @@
       this.label = this.panel.symbols['frischen-label-' + size].clone()
       this.labels.put(this.label)
       let pos = this.label.rbox(this.module)
-      let text = this.module.plain(name)
+      let text = this.labeltext.plain(name)
       text.addClass('frischen-label')
       text.attr('font-family', null)
       text.attr('style', null)
@@ -526,16 +596,16 @@
     panel.createSymbolsFromSVG(svg)
 
     // outer buttons
-    panel.pos(0, 3).flipHV().button("WGT", true).label("l", "WGT")
-    panel.pos(0, 4).flipHV().button("HaGT", true).label("l", "HaGT")
-    panel.pos(0, 5).flipHV().button("SGT", true).label("l", "SGT")
+    panel.pos(0, 3).flipHV().button("WGT").label("l", "WGT")
+    panel.pos(0, 4).flipHV().button("HaGT").label("l", "HaGT")
+    panel.pos(0, 5).flipHV().button("SGT").label("l", "SGT")
     panel.pos(0, 7).flipHV().counter("Af").label("s", "Af")
-    panel.pos(0, 9).flipHV().button("FHT", true).label("l", "FHT")
-    panel.pos(0, 10).flipHV().button("ErsGT", true).label("l", "ErsGT")
-    panel.pos(0, 11).flipHV().button("WHT", true).label("l", "WHT")
-    panel.pos(0, 12).flipHV().button("AsT", true).label("l", "AsT")
-    panel.pos(0, 13).flipHV().button("AsLT", true).label("l", "AsLT")
-    panel.pos(0, 14).flipHV().button("BlGT", true).label("l", "BlGT")
+    panel.pos(0, 9).flipHV().button("FHT").label("l", "FHT")
+    panel.pos(0, 10).flipHV().button("ErsGT").label("l", "ErsGT")
+    panel.pos(0, 11).flipHV().button("WHT").label("l", "WHT")
+    panel.pos(0, 12).flipHV().button("AsT").label("l", "AsT")
+    panel.pos(0, 13).flipHV().button("AsLT").label("l", "AsLT")
+    panel.pos(0, 14).flipHV().button("BlGT").label("l", "BlGT")
 
     // counters
     panel.pos(1, 8).tower().label("s", "Ef")
