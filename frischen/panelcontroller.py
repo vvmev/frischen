@@ -29,12 +29,6 @@ class Element():
         for e in controller.elements[kind].values():
             e.value = cls.initial_value
 
-    @classmethod
-    def act_on_button(cls, controller, button, value):
-        if value and button in controller.elements['blockend'] \
-                and controller.is_outer_button('BlGT'):
-            controller.elements['blockend'][button].value = 1
-
     @property
     def value(self):
         return self.__value
@@ -53,23 +47,26 @@ class Element():
             self.controller.topic(self.kind, self.name),
             str(self.value).encode('utf-8'))
 
+    def on_released(self, controller):
+        pass
+
 
 class BlockEnd(Element):
-    pass
+    def on_released(self, controller):
+        if controller.is_outer_button('BlGT'):
+            self.value = 1
 
 
 class Signal(Element):
     initial_value = 'Hp0'
 
-    @classmethod
-    def act_on_button(cls, controller, button, value):
-        if value and button in controller.elements['signal']:
-            if controller.is_outer_button('SGT'):
-                controller.elements['signal'][button].start_change_shunting()
-            if controller.is_outer_button('HaGT'):
-                controller.elements['signal'][button].start_halt()
-            if controller.is_outer_button('ErsGT'):
-                controller.elements['signal'][button].start_alt()
+    def on_released(self, controller):
+        if controller.is_outer_button('SGT'):
+            self.start_change_shunting()
+        if controller.is_outer_button('HaGT'):
+            self.start_halt()
+        if controller.is_outer_button('ErsGT'):
+            self.start_alt()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
@@ -118,11 +115,9 @@ class Signal(Element):
 class Switch(Element):
     initial_value = (0, 0)
 
-    @classmethod
-    def act_on_button(cls, controller, button, value):
-        if value and button in controller.elements['switch'] \
-                and controller.is_outer_button('WGT'):
-            controller.elements['switch'][button].start_change()
+    def on_released(self, controller):
+        if controller.is_outer_button('WGT'):
+            self.start_change()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
@@ -215,36 +210,6 @@ class Controller():
                 return False
         return True
 
-    async def reset_signal_group_button(self):
-        logger.debug(f'Started signal_group_button timeout')
-        await asyncio.sleep(5)
-        logger.debug(f'signal_group_button timeout reached')
-        self.signal_group_button_state = 0
-        self.publish(
-            self.topic('button', self.signal_group_button), b'0')
-        self.signal_group_button_reset = None
-
-    def start_reset_signal_group_button(self):
-        if self.signal_group_button_reset:
-            self.signal_group_button_reset.cancel()
-        self.signal_group_button_reset = asyncio.create_task(
-            self.reset_signal_group_button())
-
-    async def reset_switch_group_button(self):
-        logger.debug(f'Started switch_group_button timeout')
-        await asyncio.sleep(5)
-        logger.debug(f'switch_group_button timeout reached')
-        self.switch_group_button_state = 0
-        self.publish(
-            self.topic('button', self.switch_group_button), b'0')
-        self.switch_group_button_reset = None
-
-    def start_reset_switch_group_button(self):
-        if self.switch_group_button_reset:
-            self.switch_group_button_reset.cancel()
-        self.switch_group_button_reset = asyncio.create_task(
-            self.reset_switch_group_button())
-
     async def handle(self):
         self.connected = True
         for cls in self.elementClass.values():
@@ -252,7 +217,7 @@ class Controller():
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
-            while True:
+            while self.connected:
                 message = await self.client.deliver_message()
                 packet = message.publish_packet
                 topic = packet.variable_header.topic_name
@@ -263,9 +228,11 @@ class Controller():
 
                 if button in self.outer_buttons:
                     self.outer_buttons[button].state = value
-
-                for cls in self.elementClass.values():
-                    cls.act_on_button(self, button, value)
+                elif not value:
+                    for elementClassname in self.elements.keys():
+                        for b in self.elements[elementClassname].values():
+                            if (b.name == button):
+                                b.on_released(self)
 
             await self.client.unsubscribe(['frischen/time/#'])
             await self.client.disconnect()
