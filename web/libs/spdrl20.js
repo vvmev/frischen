@@ -245,23 +245,30 @@ var SpDrL20Panel = (function() {
       this.blinker = undefined
     }
 
-    subscribeTrack(indicator, elements) {
-      this.panel.client.subscribe('track', indicator, function(k, v) {
-        for (let e of elements) {
-          e.removeClass('frischen-track-locked')
-          e.removeClass('frischen-track-occupied')
+    addClasses(elements, cs) {
+      for (let e of elements) {
+        for (let c of cs) {
+          e.addClass(c)
         }
-        let c = undefined
+      }
+    }
+
+    removeClasses(elements, cs) {
+      for (let e of elements) {
+        for (let c of cs) {
+          e.removeClass(c)
+        }
+      }
+    }
+
+    subscribeTrack(indicator, elements) {
+      this.panel.client.subscribe('track', indicator, (k, v) => {
+        this.removeClasses(elements, ['frischen-track-locked', 'frischen-track-occupied'])
         switch(v) {
           case 'l':
-            c = 'frischen-track-locked'; break
+            this.addClasses(elements, ['frischen-track-locked']); break
           case 'o':
-            c = 'frischen-track-occupied'; break
-        }
-        if (c !== undefined) {
-          for (let e of elements) {
-            e.addClass(c)
-          }
+            this.addClasses(elements, ['frischen-track-occupied']); break
         }
       })
     }
@@ -342,47 +349,52 @@ var SpDrL20Panel = (function() {
     }
 
     turnout(indicator) {
-      let position = [false, false]
-      let self = this
+      this.position = false
+      this.moving = false
       this.symbol(this.tracks, 'frischen-track-h')
       this.symbol(this.tracks, 'frischen-track-d')
       let leg1 = this.symbol(this.indicators, 'frischen-track-indicator-d1')
       let leg2 = this.symbol(this.indicators, 'frischen-track-indicator-h1')
       leg2.addClass('frischen-switch-position')
       // also: blinks red if trailing point movement throws switch
-      let occupied = [
-        this.symbol(this.indicators, 'frischen-track-indicator-d2'),
-        this.symbol(this.indicators, 'frischen-track-indicator-h2'),
-      ]
-      this.panel.client.subscribe('switch', indicator, function(k, v) {
-        let position, moving, active
-        [position, moving] = stringToBooleanArray(v)
-        console.log(self.name + ": " + position + ", " + moving)
-        if (position) {
-          active = leg1.addClass('frischen-switch-position')
+      let track1 = this.symbol(this.indicators, 'frischen-track-indicator-d2')
+      let track2 = this.symbol(this.indicators, 'frischen-track-indicator-h2')
+      let occupied = [track1, track2]
+      this.panel.client.subscribe('switch', indicator, (k, v) => {
+        [this.position, this.moving] = stringToBooleanArray(v)
+        console.log("switch " + k + " position " + this.position + ", moving " + this.moving)
+        if (this.position) {
+          this.active = leg1.addClass('frischen-switch-position')
           leg2.removeClass('frischen-switch-position')
         } else {
           leg1.removeClass('frischen-switch-position')
-          active = leg2.addClass('frischen-switch-position')
+          this.active = leg2.addClass('frischen-switch-position')
         }
-        if (self.blinker !== undefined) {
-          self.panel.removeBlinker(self.blinker)
-          self.blinker = undefined
+        if (this.blinker !== undefined) {
+          this.panel.removeBlinker(this.blinker)
+          this.blinker = undefined
         }
-        if (moving) {
-          self.blinker = self.panel.addBlinker([active], 'frischen-switch-position')
+        if (this.moving) {
+          this.blinker = this.panel.addBlinker([this.active], 'frischen-switch-position')
         }
       })
-      this.subscribeTrack(indicator, occupied)
+      this.panel.client.subscribe('track', indicator, (k, v) => {
+        let active = this.position ? track1 : track2
+        this.removeClasses(occupied, ['frischen-track-locked', 'frischen-track-occupied'])
+        switch(v) {
+          case 'l':
+            this.addClasses([active], ['frischen-track-locked']); break
+          case 'o':
+            this.addClasses(occupied, ['frischen-track-occupied']); break
+        }
+      })
       return this
     }
 
     signalA(indicator) {
-      let self = this
       this.symbol(this.tracks, 'frischen-alt-signal')
       let light = this.symbol(this.indicators, 'frischen-alt-signal-indicator')
-      this.blinker = undefined
-      this.panel.client.subscribe('signal', indicator, function(k, v) {
+      this.panel.client.subscribe('signal', indicator, (k, v) => {
         switch(v) {
           case 'Hp0-Zs1':
           case 'Zs1':
