@@ -43,7 +43,7 @@
       panel.pos(2, 11).trackH("1-4")
       panel.pos(2, 12).flipHV().turnout("W13").button("W13").label("s", "13")
       panel.pos(2, 13).flipHV()
-        .signalD("p1p3").signalA("altF").signalH("F")
+        .signalD("p1p3").signalA("F").signalH("F")
         .button("F").label("l", "F")
       panel.pos(2, 14).trackH("1-6")
       // Streckentastensperre ausgelöst: Bezeichnungsfeld blinkt gelb

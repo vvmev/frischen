@@ -18,15 +18,18 @@ class Element():
         self.__value = 0
         self.task = None
         if self.kind not in self.controller.elements:
-            logger.debug(f'my name is {self.kind}')
             self.controller.elementClass[self.kind] = self.__class__
             self.controller.elements[self.kind] = {}
         self.controller.elements[self.kind][self.name] = self
 
     @classmethod
-    def initialize_all(cls, controller):
+    def all(cls, controller):
         kind = cls.__name__.lower()
-        for e in controller.elements[kind].values():
+        return controller.elements[kind].values()
+
+    @classmethod
+    def initialize_all(cls, controller):
+        for e in cls.all(controller):
             e.initialize()
 
     def initialize(self):
@@ -50,31 +53,46 @@ class Element():
             self.controller.topic(self.kind, self.name),
             str(self.value).encode('utf-8'))
 
-    def on_released(self, controller):
+    def on_button(self, controller):
         pass
 
 
 class BlockEnd(Element):
-    def on_released(self, controller):
-        if controller.is_outer_button('BlGT'):
+    def on_button(self, controller, value):
+        if value and controller.is_outer_button('BlGT'):
             self.value = 1
 
 
 class Signal(Element):
     initial_value = 'Hp0'
 
-    def on_released(self, controller):
-        if controller.is_outer_button('SGT'):
-            self.start_change_shunting()
-        if controller.is_outer_button('HaGT'):
-            self.start_halt()
-        if controller.is_outer_button('ErsGT'):
-            self.start_alt()
+    def on_button(self, controller, value):
+        self.button = value
+        if value:
+            if controller.is_outer_button('SGT'):
+                self.start_change_shunting()
+            if controller.is_outer_button('HaGT'):
+                self.start_halt()
+            if controller.is_outer_button('ErsGT'):
+                self.start_alt()
+            pushed = []
+            for e in self.all(controller):
+                if e.button:
+                    pushed.append(e)
+            if len(pushed) == 2:
+                route = f'{pushed[0].name},{pushed[1].name}'
+                if route in controller.routes:
+                    controller.routes[route].start()
+                else:
+                    route = f'{pushed[1].name},{pushed[0].name}'
+                    if route in controller.routes:
+                        controller.routes[route].start()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
         self.__value = 'Hp0'
         self.aspects = []
+        self.button = 0
 
     def alt(self):
         self.aspects += ['Zs1']
@@ -114,43 +132,96 @@ class Signal(Element):
             if self.value == 'Hp0':
                 self.value = 'Sh1'
 
+    def start_home(self, aspect):
+        self.value = aspect
 
-class Switch(Element):
+
+class Track(Element):
     initial_value = (0, 0)
 
-    def on_released(self, controller):
-        if controller.is_outer_button('WGT'):
+    def __init__(self, controller, name):
+        super().__init__(controller, name)
+        self.locked = 0
+        self.occupied = 0
+
+    @property
+    def value(self):
+        v = ','.join([str(i) for i in [self.locked, self.occupied]])
+        return v
+
+    @value.setter
+    def value(self, value):
+        (self.locked, self.occupied) = value
+        self.publish()
+
+    def set_locked(self, locked):
+        self.locked = locked
+        self.publish()
+
+    def set_blocked(self, occupied):
+        self.occupied = occupied
+        self.publish()
+
+
+class Turnout(Element):
+    initial_value = (0, 0, 0, 0)
+
+    def on_button(self, controller, value):
+        if value and controller.is_outer_button('WGT'):
             self.start_change()
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
         self.position = 0
         self.moving = 0
+        self.locked = 0
+        self.blocked = 0
+        self.occupied = 0
+        self.task = None
 
     def initialize(self):
-        self.position = 1  # so we switch to 0
-        self.start_change()
+        self.position = 1
+        self.start_change(0)
 
     @property
     def value(self):
-        return f'{self.position},{self.moving}'
+        v = ','.join([str(i) for i in [self.position, self.moving, self.locked, self.blocked]])
+        return v
 
     @value.setter
     def value(self, value):
-        self.position = value[0]
-        self.moving = value[1]
+        (self.position, self.moving, self.locked, self.blocked) = value
         self.publish()
 
-    def start_change(self):
-        if self.moving:
-            return
-        asyncio.create_task(self.change())
+    def set_position(self, position):
+        self.position = position
+        self.publish()
 
-    async def change(self):
-        if self.moving == 1:
+    def set_moving(self, moving):
+        self.moving = moving
+        self.publish()
+
+    def set_locked(self, locked):
+        self.locked = locked
+        self.publish()
+
+    def set_blocked(self, blocked):
+        self.blocked = blocked
+        self.publish()
+
+    def start_change(self, position=None):
+        if position is None:
+            position = 1 if self.position == 0 else 0
+        if self.task:
+            self.task.cancel()
+        self.task = asyncio.create_task(self.change(position))
+        return self.task
+
+    async def change(self, position):
+        if position == self.position:
             return
+        self.position = position
         self.moving = 1
-        self.position = 1 if self.position == 0 else 0
         self.publish()
 
         await asyncio.sleep(6)
@@ -171,6 +242,60 @@ class OuterButton():
         return f'OuterButton<{self.name}>'
 
 
+class Route():
+    def __init__(self, controller, s1, s2):
+        self.s1 = controller.get(Signal, s1)
+        self.s2 = controller.get(Signal, s2)
+        self.name = f'{self.s1.name},{self.s2.name}'
+        self.tracks = []
+        self.turnouts = []
+        self.flankProtections = []
+        self.controller = controller
+        self.controller.routes[self.name] = self
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.name}>'
+
+    def turnout(self, turnout, position):
+        turnout = self.controller.get(Turnout, turnout)
+        self.turnouts.append((turnout, position))
+        self.tracks.append(turnout)
+        return self
+
+    def flankProtection(self, turnout, position):
+        turnout = self.controller.get(Turnout, turnout)
+        self.flankProtections.append((turnout, position))
+        return self
+
+    def track(self, track):
+        track = self.controller.get(Track, track)
+        self.tracks.append(track)
+        return self
+
+    def start(self):
+        logger.debug(f'started: {self}')
+        asyncio.create_task(self.change())
+
+    async def change(self):
+        tasks = []
+        for (turnout, position) in self.turnouts:
+            tasks.append(turnout.start_change(position))
+        for (turnout, position) in self.flankProtections:
+            tasks.append(turnout.start_change(position))
+        await asyncio.wait(tasks)
+        for (turnout, position) in self.turnouts:
+            turnout.set_locked(1)
+        for (turnout, position) in self.flankProtections:
+            turnout.set_locked(1)
+        for track in self.tracks:
+            if track.occupied:
+                logger.debug(f'Track {track} is occupied, not activating route {self}')
+                return
+        for track in self.tracks:
+            track.set_locked(1)
+        self.s1.start_home('Hp1')
+
+
 class Controller():
     def __init__(self, base_topic):
         self.client = MQTTClient()
@@ -179,6 +304,7 @@ class Controller():
         self.elements = {}
         self.outer_buttons = {}
         self.base_topic = base_topic
+        self.routes = {}
         OuterButton(self, 'BlGT')
         OuterButton(self, 'ErsGT')
         OuterButton(self, 'HaGT')
@@ -188,6 +314,10 @@ class Controller():
 
     async def connect(self):
         await self.client.connect('mqtt://localhost/')
+
+    def get(self, cls, name):
+        clsname = cls.__name__.lower()
+        return self.elements[clsname][name]
 
     def topic(self, kind, subject):
         return f'{self.base_topic}/{kind}/{subject}'
@@ -235,11 +365,11 @@ class Controller():
 
                 if button in self.outer_buttons:
                     self.outer_buttons[button].state = value
-                elif not value:
+                else:
                     for elementClassname in self.elements.keys():
                         for b in self.elements[elementClassname].values():
                             if (b.name == button):
-                                b.on_released(self)
+                                b.on_button(self, value)
 
             await self.client.unsubscribe(['frischen/time/#'])
             await self.client.disconnect()

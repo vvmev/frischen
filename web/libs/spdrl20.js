@@ -263,13 +263,12 @@ var SpDrL20Panel = (function() {
 
     subscribeTrack(indicator, elements) {
       this.panel.client.subscribe('track', indicator, (k, v) => {
+        [this.locked, this.occupied] = stringToBooleanArray(v)
         this.removeClasses(elements, ['frischen-track-locked', 'frischen-track-occupied'])
-        switch(v) {
-          case 'l':
-            this.addClasses(elements, ['frischen-track-locked']); break
-          case 'o':
-            this.addClasses(elements, ['frischen-track-occupied']); break
-        }
+        if (this.locked)
+            this.addClasses(elements, ['frischen-track-locked'])
+        else if (this.occupied)
+            this.addClasses(elements, ['frischen-track-occupied'])
       })
     }
 
@@ -351,6 +350,8 @@ var SpDrL20Panel = (function() {
     turnout(indicator) {
       this.position = false
       this.moving = false
+      this.locked = false
+      this.blocked = false
       this.symbol(this.tracks, 'frischen-track-h')
       this.symbol(this.tracks, 'frischen-track-d')
       let leg1 = this.symbol(this.indicators, 'frischen-track-indicator-d1')
@@ -360,9 +361,9 @@ var SpDrL20Panel = (function() {
       let track1 = this.symbol(this.indicators, 'frischen-track-indicator-d2')
       let track2 = this.symbol(this.indicators, 'frischen-track-indicator-h2')
       let occupied = [track1, track2]
-      this.panel.client.subscribe('switch', indicator, (k, v) => {
-        [this.position, this.moving] = stringToBooleanArray(v)
-        console.log("switch " + k + " position " + this.position + ", moving " + this.moving)
+      this.panel.client.subscribe('turnout', indicator, (k, v) => {
+        [this.position, this.moving, this.locked, this.blocked] = stringToBooleanArray(v)
+        console.log("turnout " + k + " position " + this.position + ", moving " + this.moving)
         if (this.position) {
           this.active = leg1.addClass('frischen-switch-position')
           leg2.removeClass('frischen-switch-position')
@@ -377,13 +378,15 @@ var SpDrL20Panel = (function() {
         if (this.moving) {
           this.blinker = this.panel.addBlinker([this.active], 'frischen-switch-position')
         }
+        let active = this.position ? track1 : track2
+          this.removeClasses([track1, track2], ['frischen-track-locked'])
+        if (this.locked) {
+          this.addClasses([active], ['frischen-track-locked'])
+        }
       })
       this.panel.client.subscribe('track', indicator, (k, v) => {
-        let active = this.position ? track1 : track2
         this.removeClasses(occupied, ['frischen-track-locked', 'frischen-track-occupied'])
         switch(v) {
-          case 'l':
-            this.addClasses([active], ['frischen-track-locked']); break
           case 'o':
             this.addClasses(occupied, ['frischen-track-occupied']); break
         }

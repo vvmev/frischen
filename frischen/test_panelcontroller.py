@@ -5,7 +5,7 @@ import unittest
 
 from unittest.mock import MagicMock
 
-from frischen.panelcontroller import BlockEnd, Controller, Element, Signal, Switch
+from frischen.panelcontroller import BlockEnd, Controller, Element, Signal, Turnout
 
 
 class ElementTestCase(unittest.TestCase):
