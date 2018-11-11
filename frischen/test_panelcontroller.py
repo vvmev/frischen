@@ -43,11 +43,11 @@ class BlockEndTestCase(unittest.TestCase):
     def test_on_released_alone(self):
         e = BlockEnd(self.controller, 'uat')
         self.controller.is_outer_button = MagicMock(return_value=False)
-        e.on_released(self.controller)
+        e.on_button(self.controller, 1)
         self.assertEqual(e.value, 0)
 
     def test_on_released_with_blockgroupbutton(self):
         e = BlockEnd(self.controller, 'uat')
         self.controller.is_outer_button = MagicMock(return_value=True)
-        e.on_released(self.controller)
+        e.on_button(self.controller, 1)
         self.assertEqual(e.value, 1)
