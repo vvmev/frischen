@@ -15,7 +15,7 @@ class Element():
         self.controller = controller
         self.kind = self.__class__.__name__.lower()
         self.name = name
-        self.state = 0
+        self.__value = 0
         self.task = None
         if self.kind not in self.controller.elements:
             logger.debug(f'my name is {self.kind}')
@@ -73,7 +73,7 @@ class Signal(Element):
 
     def __init__(self, controller, name):
         super().__init__(controller, name)
-        self.value = 'Hp0'
+        self.__value = 'Hp0'
         self.aspects = []
 
     def alt(self):
