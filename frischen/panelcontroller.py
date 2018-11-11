@@ -24,10 +24,13 @@ class Element():
         self.controller.elements[self.kind][self.name] = self
 
     @classmethod
-    def initialize(cls, controller):
+    def initialize_all(cls, controller):
         kind = cls.__name__.lower()
         for e in controller.elements[kind].values():
-            e.value = cls.initial_value
+            e.initialize()
+
+    def initialize(self):
+        self.value = self.initial_value
 
     @property
     def value(self):
@@ -124,6 +127,10 @@ class Switch(Element):
         self.position = 0
         self.moving = 0
 
+    def initialize(self):
+        self.position = 1  # so we switch to 0
+        self.start_change()
+
     @property
     def value(self):
         return f'{self.position},{self.moving}'
@@ -213,7 +220,7 @@ class Controller():
     async def handle(self):
         self.connected = True
         for cls in self.elementClass.values():
-            cls.initialize(self)
+            cls.initialize_all(self)
         await self.client.subscribe([
             (self.topic('button', '#'), QOS_0)])
         try:
