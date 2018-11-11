@@ -71,10 +71,19 @@ class Signal(Element):
         if value:
             if controller.is_outer_button('SGT'):
                 self.start_change_shunting()
+                return
             if controller.is_outer_button('HaGT'):
                 self.start_halt()
+                return
             if controller.is_outer_button('ErsGT'):
                 self.start_alt()
+                return
+            if controller.is_outer_button('FHT'):
+                for route in controller.routes.values():
+                    if route.s1 == self and route.locked:
+                        route.unlock()
+                return
+
             pushed = []
             for e in self.all(controller):
                 if e.button:
@@ -167,7 +176,9 @@ class Turnout(Element):
     initial_value = (0, 0, 0, 0)
 
     def on_button(self, controller, value):
-        if value and controller.is_outer_button('WGT'):
+        if value and controller.is_outer_button('WGT') \
+                and not self.locked and not self.blocked \
+                and not self.occupied:
             self.start_change()
 
     def __init__(self, controller, name):
@@ -247,6 +258,7 @@ class Route():
         self.s1 = controller.get(Signal, s1)
         self.s2 = controller.get(Signal, s2)
         self.name = f'{self.s1.name},{self.s2.name}'
+        self.locked = False
         self.tracks = []
         self.turnouts = []
         self.flankProtections = []
@@ -294,6 +306,16 @@ class Route():
         for track in self.tracks:
             track.set_locked(1)
         self.s1.start_home('Hp1')
+        self.locked = True
+
+    def unlock(self):
+        self.s1.start_home('Hp0')
+        for (turnout, position) in self.turnouts:
+            turnout.set_locked(0)
+        for (turnout, position) in self.flankProtections:
+            turnout.set_locked(0)
+        for track in self.tracks:
+            track.set_locked(0)
 
 
 class Controller():
@@ -307,6 +329,7 @@ class Controller():
         self.routes = {}
         OuterButton(self, 'BlGT')
         OuterButton(self, 'ErsGT')
+        OuterButton(self, 'FHT')
         OuterButton(self, 'HaGT')
         OuterButton(self, 'SGT')
         OuterButton(self, 'WGT')
