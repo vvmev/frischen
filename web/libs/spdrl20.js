@@ -415,14 +415,13 @@ var SpDrL20Panel = (function() {
       this.symbol(this.tracks, 'frischen-distant-signal')
       let light = this.symbol(this.indicators, 'frischen-distant-signal-indicator')
       this.panel.client.subscribe('signal', indicator, function(k, v) {
+        light.attr('class', '');
         switch(v) {
           case 'Vr0':
             light.attr('class', 'frischen-signal-yellow'); break
           case 'Vr1':
           case 'Vr2':
             light.attr('class', 'frischen-signal-green'); break
-          default:
-            light.attr('class', ''); break
         }
       })
       return this
@@ -494,13 +493,14 @@ var SpDrL20Panel = (function() {
       this.symbol(this.tracks, 'frischen-block-arrow')
       let triangle = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
         .addClass('frischen-signal-red')
-      this.panel.client.subscribe('blockend', indicator, function(k, v) {
+      let n = indicator.split("-")[0]
+      this.panel.client.subscribe(n, indicator, function(k, v) {
         if (stringToBoolean(v)) {
-          triangle.removeClass('frischen-signal-red')
-          triangle.addClass('frischen-signal-yellow')
-        } else {
           triangle.addClass('frischen-signal-red')
           triangle.removeClass('frischen-signal-yellow')
+        } else {
+          triangle.removeClass('frischen-signal-red')
+          triangle.addClass('frischen-signal-yellow')
         }
       })
       return this

@@ -27,7 +27,7 @@
       panel.pos(1, 12).flipHV().counter("AsT")
 
       // track 1
-      panel.pos(2, 0).flipHV().triangle("block").label("l", "n.Ma")
+      panel.pos(2, 0).flipHV().triangle("blockstart-m").label("l", "n.Ma")
       panel.pos(2, 1).trackH("1-1")
       panel.pos(2, 2).trackH("1-1").button("p1p3").label("l", "p1/p3")
       panel.pos(2, 3).trackH("1-1")
@@ -74,7 +74,7 @@
       panel.pos(3, 13).trackH("2-6")
       panel.pos(3, 14).trackH("2-6").button("n2n3").label("l", "n2/n3")
       // Streckenwiederholungsperre Beschriftungsfeld: rot
-      panel.pos(3, 15).triangle("200").label("l", "n.Db")
+      panel.pos(3, 15).triangle("blockstart-d").label("l", "n.Db")
 
       // track 3
       panel.pos(4, 5).trackHt()
