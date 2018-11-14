@@ -14,65 +14,89 @@ def to_bool(v):
     return v in [1, '1', 't', 'T', 'true', 'True', 'y', 'yes']
 
 
-class OnHandler():
+class PubSubTopic():
+    """A simple way for one object to notify others."""
     def __init__(self):
-        self.listeners = []
+        self.subscribers = []
 
-    def add(self, name, fn):
-        self.listeners.append((name, fn))
+    def subscribe(self, name, fn):
+        self.subscribers.append((name, fn))
 
-    def post(self, *args, **kwargs):
-        for name, fn in self.listeners:
+    def publish(self, *args, **kwargs):
+        for name, fn in self.subscribers:
             logger.debug(f'post {name} {args}')
             fn(*args, **kwargs)
 
 
-class Element():
-    initial_value = 0
+class ElementManager():
+    """
+    Manage the collection of objects created from a class.
+    """
+    def __init__(self):
+        self.objects = {}
 
-    def __init__(self, controller, name):
-        self.controller = controller
-        self.kind = self.__class__.__name__.lower()
-        self.name = name
-        self.pressed = False
-        self.__value = 0
-        self.task = None
-        if self.kind not in self.controller.elements:
-            self.controller.elementClass[self.kind] = self.__class__
-            self.controller.elements[self.kind] = {}
-        self.controller.elements[self.kind][self.name] = self
+    def register(self, element):
+        self.objects[element.name] = element
 
-    @classmethod
-    def all(cls, controller):
-        kind = cls.__name__.lower()
-        return controller.elements[kind].values()
+    def unregister(self, element):
+        if element in self.objects:
+            del self.objects[element]
+        if 'name' in element:
+            del self.objects[element.name]
 
-    @classmethod
-    def initialize_all(cls, controller):
-        for e in cls.all(controller):
+    def all(self):
+        return self.objects.values()
+
+    def initialize_all(self):
+        for e in self.all():
             e.initialize()
 
-    def initialize(self):
-        self.value = self.initial_value
+
+class ElementValueProperty():
+    def __init__(self, label):
+        self.label = label
+
+    def __get__(self, instance, owner):
+        return instance.__dict__.get(self.label)
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.label] = value
+
+
+class Element():
+    objects = ElementManager()
+
+    occupied = ElementValueProperty('occupied')
+
+    def __init__(self, tower, name):
+        self.kind = self.__class__.__name__.lower()
+        self.name = name
+        self.objects.register(self)
+        self.tower = tower
+        self.pressed = False
+        self.task = None
+
+    def set(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__dict__[k] = v
+        self.publish()
 
     @property
     def value(self):
-        return self.__value
+        return '{:b}'.format(self.occupied)
 
-    @value.setter
-    def value(self, value):
-        self.__value = value
-        self.publish()
+    def initialize(self):
+        self.set(occupied=False)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.name}>'
 
     def topic(self):
-        return self.controller.topic(self.kind, self.name)
+        return self.tower.topic(self.kind, self.name)
 
     def publish(self):
         # logger.debug(f'{self}.publish({self.kind}, {self.value})')
-        self.controller.publish(self.topic(), str(self.value).encode('utf-8'))
+        self.tower.publish(self.topic(), self.value.encode('utf-8'))
 
     def on_button(self, pressed):
         logger.debug(f'Unimplemented on_button() for class {self}')
@@ -80,9 +104,21 @@ class Element():
 
 
 class BlockEnd(Element):
+    blocked = ElementValueProperty('blocked')
+
+    @Element.property
+    def value(self):
+        return '{:b},{:b}'.format(self.occupied, self.blocked)
+
+    def initialize(self):
+        super().initialize()
+        self.set(blocked=False)
+
     def on_button(self, pressed):
-        if pressed and self.controller.is_outer_button('BlGT'):
-            self.pressed = 1
+        if pressed and self.tower.is_outer_button('BlGT'):
+            self.pressed = True
+        else
+            self.pressed = False
 
 
 class BlockStart(Element):
@@ -90,10 +126,10 @@ class BlockStart(Element):
 
 
 class Counter(Element):
-    def __init__(self, controller, name):
-        super().__init__(controller, name)
-        if name in controller.outer_buttons:
-            controller.outer_buttons[name].counter = self
+    def __init__(self, tower, name):
+        super().__init__(tower, name)
+        if name in tower.outer_buttons:
+            tower.outer_buttons[name].counter = self
 
     def increment(self):
         self.value += 1
@@ -104,24 +140,24 @@ class DistantSignal(Element):
     aspects = ['Vr0', 'Vr1', 'Vr2']
     translated_aspects = { 'Hp0': 'Vr0', 'Hp1': 'Vr1', 'Hp2': 'Vr2' }
 
-    def __init__(self, controller, name, home, mounted_at=None):
-        super().__init__(controller, name)
+    def __init__(self, tower, name, home, mounted_at=None):
+        super().__init__(tower, name)
         self.mounted_at = None
         if mounted_at is not None:
-            self.mounted_at = controller.get('signal', mounted_at)
-            self.mounted_at.on_change.add('mounted_at', self.mounted_at_changed)
+            self.mounted_at = tower.get('signal', mounted_at)
+            self.mounted_at.on_change.subscribe('mounted_at', self.mounted_at_changed)
         if isinstance(home, str):
-            signal = self.controller.get('signal', home)
-            signal.on_change.add(f'{self}', lambda aspect: self.start_distant(aspect))
+            signal = self.tower.get('signal', home)
+            signal.on_change.subscribe(f'{self}', lambda aspect: self.start_distant(aspect))
         if isinstance(home, dict):
             k = next(iter(home))
-            turnout = self.controller.get('turnout', k)
-            signals = [self.controller.get('signal', s) for s in home[k]]
-            signals[0].on_change.add(
+            turnout = self.tower.get('turnout', k)
+            signals = [self.tower.get('signal', s) for s in home[k]]
+            signals[0].on_change.subscribe(
                 f'{self}',
                 lambda aspect:
                 self.start_distant(aspect) if turnout.position==0 else False)
-            signals[1].on_change.add(
+            signals[1].on_change.subscribe(
                 f'{self}',
                 lambda aspect:
                 self.start_distant(aspect) if turnout.position==1 else False)
@@ -135,14 +171,14 @@ class DistantSignal(Element):
         Element.value.fset(self, value)
 
     def topic(self):
-        return self.controller.topic('signal', self.name)
+        return self.tower.topic('signal', self.name)
 
     def on_button(self, pressed):
         pass
 
     def publish(self):
         if self.mounted_at is not None and self.mounted_at.value == 'Hp0':
-            self.controller.publish(self.topic(), '-'.encode('utf-8'))
+            self.tower.publish(self.topic(), '-'.encode('utf-8'))
         else:
             super().publish()
 
@@ -157,49 +193,49 @@ class DistantSignal(Element):
 class Signal(Element):
     initial_value = 'Hp0'
 
-    def __init__(self, controller, name):
-        super().__init__(controller, name)
+    def __init__(self, tower, name):
+        super().__init__(tower, name)
         # self.__value = 'Hp0'
         self.aspects = []
-        self.on_change = OnHandler()
+        self.on_change = PubSubTopic()
 
     @Element.value.setter
     def value(self, value):
         if not value in self.aspects:
             return
         Element.value.fset(self, value)
-        self.on_change.post(value)
+        self.on_change.publish(value)
 
     def on_button(self, pressed):
         self.pressed = pressed
         if pressed:
-            if self.controller.is_outer_button('SGT'):
+            if self.tower.is_outer_button('SGT'):
                 self.start_change_shunting()
                 return
-            if self.controller.is_outer_button('HaGT'):
+            if self.tower.is_outer_button('HaGT'):
                 self.start_halt()
                 return
-            if self.controller.is_outer_button('ErsGT'):
+            if self.tower.is_outer_button('ErsGT'):
                 self.start_alt()
                 return
-            if self.controller.is_outer_button('FHT'):
-                for route in self.controller.routes.values():
+            if self.tower.is_outer_button('FHT'):
+                for route in self.tower.routes.values():
                     if route.s1 == self and route.locked:
                         route.unlock()
                 return
 
             pushed = []
-            for e in self.all(self.controller):
+            for e in self.all(self.tower):
                 if e.pressed:
                     pushed.append(e)
             if len(pushed) == 2:
                 route = f'{pushed[0].name},{pushed[1].name}'
-                if route in self.controller.routes:
-                    self.controller.routes[route].start()
+                if route in self.tower.routes:
+                    self.tower.routes[route].start()
                 else:
                     route = f'{pushed[1].name},{pushed[0].name}'
-                    if route in self.controller.routes:
-                        self.controller.routes[route].start()
+                    if route in self.tower.routes:
+                        self.tower.routes[route].start()
 
     def alt(self):
         self.aspects += ['Zs1']
@@ -244,8 +280,8 @@ class Signal(Element):
 class Track(Element):
     initial_value = (0, 0)
 
-    def __init__(self, controller, name):
-        super().__init__(controller, name)
+    def __init__(self, tower, name):
+        super().__init__(tower, name)
         self.locked = 0
         self.occupied = 0
 
@@ -273,13 +309,13 @@ class Turnout(Element):
 
     def on_button(self, pressed):
         # logger.debug(f'{self} => {pressed}')
-        if pressed and self.controller.is_outer_button('WGT') \
+        if pressed and self.tower.is_outer_button('WGT') \
                 and not self.locked and not self.blocked \
                 and not self.occupied:
             self.start_change()
 
-    def __init__(self, controller, name):
-        super().__init__(controller, name)
+    def __init__(self, tower, name):
+        super().__init__(tower, name)
         self.position = 0
         self.moving = 0
         self.locked = 0
@@ -338,14 +374,14 @@ class Turnout(Element):
 
 
 class OuterButton():
-    def __init__(self, controller, name):
-        self.controller = controller
+    def __init__(self, tower, name):
+        self.tower = tower
         self.name = name
         self.task = None
         self.pressed = 0
         self.counter = None
         self.task = None
-        self.controller.outer_buttons[self.name] = self
+        self.tower.outer_buttons[self.name] = self
 
     def __repr__(self):
         return f'OuterButton<{self.name}>'
@@ -357,33 +393,33 @@ class OuterButton():
 
 
 class Route():
-    def __init__(self, controller, s1, s2):
-        self.s1 = controller.get(Signal, s1)
-        self.s2 = controller.get(Signal, s2)
+    def __init__(self, tower, s1, s2):
+        self.s1 = tower.get(Signal, s1)
+        self.s2 = tower.get(Signal, s2)
         self.name = f'{self.s1.name},{self.s2.name}'
         self.locked = False
         self.tracks = []
         self.turnouts = []
         self.flankProtections = []
-        self.controller = controller
-        self.controller.routes[self.name] = self
+        self.tower = tower
+        self.tower.routes[self.name] = self
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.name}>'
 
     def turnout(self, turnout, position):
-        turnout = self.controller.get(Turnout, turnout)
+        turnout = self.tower.get(Turnout, turnout)
         self.turnouts.append((turnout, position))
         self.tracks.append(turnout)
         return self
 
     def flankProtection(self, turnout, position):
-        turnout = self.controller.get(Turnout, turnout)
+        turnout = self.tower.get(Turnout, turnout)
         self.flankProtections.append((turnout, position))
         return self
 
     def track(self, track):
-        track = self.controller.get(Track, track)
+        track = self.tower.get(Track, track)
         self.tracks.append(track)
         return self
 
@@ -422,7 +458,7 @@ class Route():
             track.set_locked(0)
 
 
-class Controller():
+class Tower():
     def __init__(self, base_topic):
         self.client = MQTTClient()
         self.connected = False
@@ -431,6 +467,8 @@ class Controller():
         self.outer_buttons = {}
         self.base_topic = base_topic
         self.routes = {}
+
+        self.managers = [Element.objects]
         OuterButton(self, 'AsT')
         Counter(self, 'AsT')
         OuterButton(self, 'BlGT')
