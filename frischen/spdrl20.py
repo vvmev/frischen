@@ -64,6 +64,13 @@ class ElementValueProperty():
 
 
 class Element():
+    """
+    The base class for elements of the signal tower.
+
+    There is one state variable, occupied, which shows whether the track represented by this element is currently
+    occupied by a train.
+    This is an abstract base class.
+    """
     objects = ElementManager()
 
     occupied = ElementValueProperty('occupied')
@@ -86,7 +93,8 @@ class Element():
         return '{:b}'.format(self.occupied)
 
     def initialize(self):
-        self.set(occupied=False)
+        self.__dict__['occupied'] = False
+        self.publish()
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.name}>'
@@ -104,20 +112,25 @@ class Element():
 
 
 class BlockEnd(Element):
+    """
+    The line block apparatus at the end of line.
+
+    The two state variables are:
+    """
     blocked = ElementValueProperty('blocked')
 
-    @Element.property
+    @property
     def value(self):
         return '{:b},{:b}'.format(self.occupied, self.blocked)
 
     def initialize(self):
+        self.__dict__['blocked'] = False
         super().initialize()
-        self.set(blocked=False)
 
     def on_button(self, pressed):
         if pressed and self.tower.is_outer_button('BlGT'):
             self.pressed = True
-        else
+        else:
             self.pressed = False
 
 
