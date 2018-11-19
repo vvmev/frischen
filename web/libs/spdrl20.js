@@ -138,6 +138,12 @@ var SpDrL20Panel = (function() {
         }
       }
     }
+
+    stop() {
+      for (let e of this.elements) {
+        e.removeClass(this.cssClass)
+      }
+    }
   }
 
 
@@ -268,10 +274,10 @@ var SpDrL20Panel = (function() {
       this.panel.client.subscribe('track', indicator, (k, v) => {
         [this.occupied, this.locked] = stringToBooleanArray(v)
         this.removeClasses(elements, ['frischen-track-locked', 'frischen-track-occupied'])
-        if (this.locked)
-            this.addClasses(elements, ['frischen-track-locked'])
-        else if (this.occupied)
+        if (this.occupied)
             this.addClasses(elements, ['frischen-track-occupied'])
+        else if (this.locked)
+            this.addClasses(elements, ['frischen-track-locked'])
       })
     }
 
@@ -633,7 +639,10 @@ var SpDrL20Panel = (function() {
 
     removeBlinker(blinker) {
       let i = this.blinking.indexOf(blinker)
-      if (i !== -1) this.blinking.splice(i, 1)
+      if (i !== -1) {
+        this.blinking[i].stop()
+        this.blinking.splice(i, 1)
+      }
     }
   }
 

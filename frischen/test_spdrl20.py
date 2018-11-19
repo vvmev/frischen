@@ -25,7 +25,8 @@ def get_tower_mock():
     tower = MagicMock()
     tower.elements = {}
     tower.publish = MagicMock()
-    tower.panel_topic = lambda k, v: f'{k}/{v}'
+    tower.panel_topic = lambda k, v: f'panel/{k}/{v}'
+    tower.trackside_topic = lambda k, v: f'trackside/{k}/{v}'
     tower.dispatcher = MQTTDispatcher(tower)
     tower.is_outer_button = MagicMock(return_value=False)
     return tower
@@ -46,12 +47,12 @@ class ElementTestCase(unittest.TestCase):
     def test_init(self):
         Element.objects.reset_all()
         self.assertEqual(self.uat.value, '0', 'correctly initialized')
-        self.tower.publish.assert_called_once_with('element/uat', b'0')
+        self.tower.publish.assert_called_once_with('panel/element/uat', b'0')
 
     def test_update(self):
         self.uat.update(occupied=1)
         self.assertEqual(self.uat.value, '1', 'changed after set()')
-        self.tower.publish.assert_called_once_with('element/uat', b'1')
+        self.tower.publish.assert_called_once_with('panel/element/uat', b'1')
         self.uat.occupied = 0
         self.assertEqual(self.uat.value, '0', 'changed after property=0')
 
@@ -65,7 +66,7 @@ class BlockEndTestCase(unittest.TestCase):
         self.tower = get_tower_mock()
         self.block_start_topic = 'blockstart'
         self.clearance_lock_release_topic = 'a_track_occupied'
-        self.uat = BlockEnd(self.tower, 'uat', block_start_topic=self.block_start_topic,
+        self.uat = BlockEnd(self.tower, 'uat', blockstart_topic=self.block_start_topic,
                             clearance_lock_release_topic=self.clearance_lock_release_topic)
         self.uat.reset()
         self.tower.publish.reset_mock()
@@ -74,31 +75,31 @@ class BlockEndTestCase(unittest.TestCase):
         self.assertNotEqual(Element.objects, BlockEnd.objects)
         self.assertIn(self.uat, BlockEnd.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('blockend/uat', b'0,0,1')
+        self.tower.publish.assert_called_once_with('panel/blockend/uat', b'0,0,1')
 
         self.tower.publish.reset_mock()
         self.uat.update(occupied=True)
-        self.tower.publish.assert_called_once_with('blockend/uat', b'1,0,1')
+        self.tower.publish.assert_called_once_with('panel/blockend/uat', b'1,0,1')
 
         self.tower.publish.reset_mock()
         self.uat.update(blocked=True)
-        self.tower.publish.assert_called_once_with('blockend/uat', b'1,1,1')
+        self.tower.publish.assert_called_once_with('panel/blockend/uat', b'1,1,1')
 
         self.tower.publish.reset_mock()
         self.uat.update(clearance_lock=False)
-        self.tower.publish.assert_called_once_with('blockend/uat', b'1,1,0')
+        self.tower.publish.assert_called_once_with('panel/blockend/uat', b'1,1,0')
 
     def test_on_button_alone(self):
-        self.tower.dispatcher.dispatch_one(self.block_start_topic, '1')
-        self.tower.dispatcher.dispatch_one(self.clearance_lock_release_topic, '0')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('block', self.block_start_topic), '1')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('track', self.clearance_lock_release_topic), '0')
 
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
         self.assertEqual(self.uat.blocked, True, 'is still blocked')
         self.assertEqual(self.uat.clearance_lock, False, 'clearance is still unlocked')
 
     def test_on_button_with_blockgroupbutton_clearance_lock(self):
-        self.tower.dispatcher.dispatch_one(self.block_start_topic, '1')
-        self.tower.dispatcher.dispatch_one(self.clearance_lock_release_topic, '1')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('block', self.block_start_topic), '1')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('track', self.clearance_lock_release_topic), '1')
         self.tower.is_outer_button = MagicMock(return_value=True)
 
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
@@ -128,27 +129,28 @@ class BlockStartTestCase(unittest.TestCase):
     def test_init(self):
         self.assertIn(self.uat, BlockStart.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('blockstart/uat', b'0,0')
+        self.tower.publish.assert_called_once_with('panel/blockstart/uat', b'0,0')
 
         self.tower.publish.reset_mock()
         self.uat.update(occupied=True)
-        self.tower.publish.assert_called_once_with('blockstart/uat', b'1,0')
+        self.tower.publish.assert_called_once_with('panel/blockstart/uat', b'1,0')
 
         self.tower.publish.reset_mock()
         self.uat.update(blocked=True)
-        self.tower.publish.assert_called_once_with('blockstart/uat', b'1,1')
+        self.tower.publish.assert_called_once_with('panel/blockstart/uat', b'1,1')
 
     def test_blocking(self):
         self.assertEqual(self.uat.blocked, False)
-        self.tower.dispatcher.dispatch_one(self.blocking_track_topic, '1')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('track', self.blocking_track_topic), '1')
         self.assertEqual(self.uat.blocked, False)
-        self.tower.dispatcher.dispatch_one(self.blocking_track_topic, '0')
-        self.tower.publish.assert_called_once_with('blockstart/uat', b'0,1')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('track', self.blocking_track_topic), '0')
+        calls = [call('panel/blockstart/uat', b'0,1')]
+        self.tower.publish.assert_has_calls(calls)
 
     def test_unblocking(self):
         self.uat.blocked = True
-        self.tower.dispatcher.dispatch_one(self.blockend_topic, '0')
-        self.tower.publish.assert_called_once_with('blockstart/uat', b'0,0')
+        self.tower.dispatcher.dispatch_one(self.tower.trackside_topic('block', self.blockend_topic), '0')
+        self.tower.publish.assert_called_once_with('panel/blockstart/uat', b'0,0')
 
 
 class CounterTestCase(unittest.TestCase):
@@ -162,11 +164,11 @@ class CounterTestCase(unittest.TestCase):
     def test_init(self):
         self.assertIn(self.uat, Counter.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('counter/uat', b'0')
+        self.tower.publish.assert_called_once_with('panel/counter/uat', b'0')
 
     def test_increment(self):
         self.uat.increment()
-        self.tower.publish.assert_called_once_with('counter/uat', b'1')
+        self.tower.publish.assert_called_once_with('panel/counter/uat', b'1')
 
 
 class DistantSignalTestCase(unittest.TestCase):
@@ -181,16 +183,16 @@ class DistantSignalTestCase(unittest.TestCase):
         self.assertIn(self.uat, DistantSignal.objects.all())
         self.assertIn(f'{self.uat}', [name for (name, _) in self.home.on_update.subscribers])
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('signal/uat', b'Vr0')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Vr0')
 
     def test_proceed(self):
         self.home.start_home('Hp1')
-        calls = [call('signal/H', b'Hp1'), call('signal/uat', b'Vr1')]
+        calls = [call('panel/signal/H', b'Hp1'), call('panel/signal/uat', b'Vr1')]
         self.tower.publish.assert_has_calls(calls)
 
         self.uat.reset()
         self.home.start_halt()
-        calls = [call('signal/H', b'Hp0'), call('signal/uat', b'Vr0')]
+        calls = [call('panel/signal/H', b'Hp0'), call('panel/signal/uat', b'Vr0')]
         self.tower.publish.assert_has_calls(calls)
 
 
@@ -209,27 +211,27 @@ class DistantSignalMountedAtTestCase(unittest.TestCase):
         self.assertIn(self.uat, DistantSignal.objects.all())
         self.assertIn(f'{self.uat}', [name for (name, _) in self.home.on_update.subscribers])
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('signal/uat', b'-')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'-')
 
     def test_proceed(self):
         self.home.start_home('Hp1')
-        calls = [call('signal/H', b'Hp1'), call('signal/uat', b'-')]
+        calls = [call('panel/signal/H', b'Hp1'), call('panel/signal/uat', b'-')]
         self.tower.publish.assert_has_calls(calls)
 
         self.uat.reset()
         self.home.start_halt()
-        calls = [call('signal/H', b'Hp0'), call('signal/uat', b'-')]
+        calls = [call('panel/signal/H', b'Hp0'), call('panel/signal/uat', b'-')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_proceed_with_mounted_at_hp1(self):
         self.mounted_at.aspect = 'Hp1'
         self.home.start_home('Hp1')
-        calls = [call('signal/H', b'Hp1'), call('signal/uat', b'Vr1')]
+        calls = [call('panel/signal/H', b'Hp1'), call('panel/signal/uat', b'Vr1')]
         self.tower.publish.assert_has_calls(calls)
 
         self.uat.reset()
         self.home.start_halt()
-        calls = [call('signal/H', b'Hp0'), call('signal/uat', b'Vr0')]
+        calls = [call('panel/signal/H', b'Hp0'), call('panel/signal/uat', b'Vr0')]
         self.tower.publish.assert_has_calls(calls)
 
 
@@ -248,38 +250,38 @@ class DistantSignalWithDivergingRouteTestCase(unittest.TestCase):
         self.assertIn(f'{self.uat}', [name for (name, _) in self.home1.on_update.subscribers])
         self.assertIn(f'{self.uat}', [name for (name, _) in self.home2.on_update.subscribers])
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('signal/uat', b'Vr0')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Vr0')
 
     def test_proceed_straight(self):
         self.turnout.position = False
         self.home1.start_home('Hp1')
-        calls = [call('signal/H1', b'Hp1'), call('signal/uat', b'Vr1')]
+        calls = [call('panel/signal/H1', b'Hp1'), call('panel/signal/uat', b'Vr1')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_stop_straight(self):
         self.turnout.position = False
         self.home1.aspect = 'Hp1'
         self.home1.start_halt()
-        calls = [call('signal/H1', b'Hp0'), call('signal/uat', b'Vr0')]
+        calls = [call('panel/signal/H1', b'Hp0'), call('panel/signal/uat', b'Vr0')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_proceed_diverging_other_signal(self):
         self.turnout.position = True
         self.home1.start_home('Hp1')
-        calls = [call('signal/H1', b'Hp1')]
+        calls = [call('panel/signal/H1', b'Hp1')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_proceed_diverging(self):
         self.turnout.position = True
         self.home2.start_home('Hp1')
-        calls = [call('signal/H2', b'Hp1'), call('signal/uat', b'Vr1')]
+        calls = [call('panel/signal/H2', b'Hp1'), call('panel/signal/uat', b'Vr1')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_stop_diverging(self):
         self.turnout.position = True
         self.home2.aspect = 'Hp1'
         self.home2.start_halt()
-        calls = [call('signal/H2', b'Hp0'), call('signal/uat', b'Vr0')]
+        calls = [call('panel/signal/H2', b'Hp0'), call('panel/signal/uat', b'Vr0')]
         self.tower.publish.assert_has_calls(calls)
 
 
@@ -336,7 +338,7 @@ class SignalTestCase(unittest.TestCase):
     def test_init(self):
         self.assertIn(self.uat, Signal.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('signal/uat', b'Hp0')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Hp0')
 
     def test_shunting_no_shunting_aspect(self):
         self.tower.is_outer_button = lambda b: b=='SGT'
@@ -356,21 +358,21 @@ class SignalTestCase(unittest.TestCase):
         self.tower.is_outer_button = lambda b: b=='SGT'
         self.tower.publish.reset_mock()
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
-        self.tower.publish.assert_called_once_with('signal/uat', b'Sh1')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Sh1')
 
     def test_set_to_stop_from_sh1(self):
         self.uat.aspect = 'Sh1'
         self.tower.is_outer_button = lambda b: b=='HaGT'
         self.tower.publish.reset_mock()
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
-        self.tower.publish.assert_called_once_with('signal/uat', b'Hp0')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Hp0')
 
     def test_set_to_stop_from_hp1(self):
         self.uat.aspect = 'Hp1'
         self.tower.is_outer_button = lambda b: b=='HaGT'
         self.tower.publish.reset_mock()
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
-        self.tower.publish.assert_called_once_with('signal/uat', b'Hp0')
+        self.tower.publish.assert_called_once_with('panel/signal/uat', b'Hp0')
 
     def test_alt_no_alt_aspect(self):
         self.tower.is_outer_button = lambda b: b=='ErsGT'
@@ -393,7 +395,7 @@ class SignalTestCase(unittest.TestCase):
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
         self.assertIsNotNone(self.uat.task, 'alt aspect is started')
         await self.uat.task
-        calls = [call('signal/uat', b'Zs1'), call('signal/uat', b'Hp0')]
+        calls = [call('panel/signal/uat', b'Zs1'), call('panel/signal/uat', b'Hp0')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_alt_alt_aspect(self):
@@ -425,15 +427,15 @@ class TrackTestCase(unittest.TestCase):
     def test_init(self):
         self.assertIn(self.uat, Track.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('track/uat', b'0,0')
+        self.tower.publish.assert_called_once_with('panel/track/uat', b'0,0')
 
     def test_occupied(self):
         self.uat.update(occupied=1)
-        self.tower.publish.assert_called_once_with('track/uat', b'1,0')
+        self.tower.publish.assert_called_once_with('panel/track/uat', b'1,0')
 
     def test_locked(self):
         self.uat.update(locked=1)
-        self.tower.publish.assert_called_once_with('track/uat', b'0,1')
+        self.tower.publish.assert_called_once_with('panel/track/uat', b'0,1')
 
 
 class TowerTestCase(unittest.TestCase):
@@ -483,7 +485,7 @@ class TurnoutTestCase(unittest.TestCase):
     def test_init(self):
         self.assertIn(self.uat, Turnout.objects.all())
         self.uat.reset()
-        self.tower.publish.assert_called_once_with('turnout/uat', b'0,0,0,0,0')
+        self.tower.publish.assert_called_once_with('panel/turnout/uat', b'0,0,0,0,0')
 
     def test_change_button_alone(self):
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
@@ -494,7 +496,7 @@ class TurnoutTestCase(unittest.TestCase):
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
         self.assertIsNotNone(self.uat.task, 'change task is running')
         await self.uat.task
-        calls = [call('turnout/uat', b'0,1,1,0,0'), call('turnout/uat', b'0,1,0,0,0')]
+        calls = [call('panel/turnout/uat', b'0,1,1,0,0'), call('panel/turnout/uat', b'0,1,0,0,0')]
         self.tower.publish.assert_has_calls(calls)
 
     def test_change_with_outer_button(self):

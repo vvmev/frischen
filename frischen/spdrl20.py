@@ -140,12 +140,16 @@ class Element():
         self.properties = ['occupied']
         self.on_update = PubSubTopic()
         self.tower.dispatcher.subscribe(self.tower.panel_topic('button', self.name), str(self), self.on_button)
+        self.tower.dispatcher.subscribe(self.tower.trackside_topic('track', name), str(self), self.on_occupied)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.name}>'
 
     def on_button(self, topic, value):
         self.pushed = to_bool(value)
+
+    def on_occupied(self, topic, value):
+        self.update(occupied=to_bool(value))
 
     def publish(self):
         self.tower.publish(self.topic(), self.value.encode('utf-8'))
@@ -424,10 +428,6 @@ class Track(Element):
         super().__init__(tower, name)
         self.locked = False
         self.properties += ['locked']
-        self.tower.dispatcher.subscribe(self.tower.trackside_topic('track', name), str(self), self.on_occupied)
-
-    def on_occupied(self, topic, value):
-        self.update(occupied=to_bool(value))
 
 
 class Turnout(Element):

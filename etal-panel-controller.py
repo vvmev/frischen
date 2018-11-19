@@ -44,17 +44,17 @@ async def main():
     Track(tower, '2-6')
     Track(tower, '3-4')
 
-    Route(tower, 'P1', 'p1p3', 'frischen/etal/track/1-1') \
+    Route(tower, 'P1', 'p1p3', 'W1') \
         .add_turnout('W1', 0) \
         .add_track('1-1') \
         .add_flank_protection('W2', 0)
 
-    Route(tower, 'F', 'P1', 'frischen/etal/track/W13') \
+    Route(tower, 'F', 'P1', 'W13') \
         .add_turnout('W13', 0) \
         .add_track('1-4') \
         .add_flank_protection('W12', 0)
 
-    Route(tower, 'P3', 'p1p3', 'frischen/etal/track/1-1') \
+    Route(tower, 'P3', 'p1p3', 'W1') \
         .add_turnout('W4', 1) \
         .add_turnout('W3', 1) \
         .add_track('2-3') \
@@ -62,7 +62,7 @@ async def main():
         .add_turnout('W1', 1) \
         .add_track('1-1') \
 
-    Route(tower, 'F', 'P3', 'frischen/etal/track/W13') \
+    Route(tower, 'F', 'P3', 'W13') \
         .add_turnout('W13', 1) \
         .add_turnout('W12', 1) \
         .add_track('2-5') \
@@ -72,7 +72,7 @@ async def main():
         .add_flank_protection('W3', 1) \
         .add_flank_protection('W4', 1)
 
-    Route(tower, 'A', 'N2', 'frischen/etal/track/W2') \
+    Route(tower, 'A', 'N2', 'W2') \
         .add_track('2-2') \
         .add_turnout('W2', 0) \
         .add_track('2-3') \
@@ -81,7 +81,7 @@ async def main():
         .add_flank_protection('W1', 0) \
         .add_flank_protection('W4', 0)
 
-    Route(tower, 'A', 'N3', 'frischen/etal/track/W2') \
+    Route(tower, 'A', 'N3', 'W2') \
         .add_track('2-2') \
         .add_turnout('W2', 0) \
         .add_track('2-3') \
@@ -90,7 +90,7 @@ async def main():
         .add_track('3-4') \
         .add_flank_protection('W1', 0)
 
-    Route(tower, 'N2', 'n2n3', 'frischen/etal/track/2-6') \
+    Route(tower, 'N2', 'n2n3', 'W12') \
         .add_turnout('W11', 0) \
         .add_track('2-5') \
         .add_turnout('W12', 0) \
@@ -98,7 +98,7 @@ async def main():
         .add_flank_protection('W10', 0) \
         .add_flank_protection('W13', 0)
 
-    Route(tower, 'N3', 'n2n3', 'frischen/etal/track/2-6') \
+    Route(tower, 'N3', 'n2n3', 'W12') \
         .add_turnout('W10', 1) \
         .add_turnout('W11', 1) \
         .add_track('2-5') \
