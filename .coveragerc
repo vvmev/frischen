@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = frischen
+omit = **/test*
+
+[html]
+directory = coverage

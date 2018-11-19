@@ -5,12 +5,14 @@ name = "pypi"
 
 [packages]
 colored = "*"
-paho-mqtt = "*"
 graphviz = "*"
-pyyaml = "*"
 hbmqtt = "*"
+paho-mqtt = "*"
+pyyaml = "*"
 
 [dev-packages]
+coverage = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.7"
