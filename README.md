@@ -27,6 +27,12 @@ Use [pipenv](https://pipenv.readthedocs.io/en/latest/) to set up your local Pyth
 
 Simple Python apps have a single file in the top level directory.
 
+### Creating a code coverage report
+
+```bash
+coverage run -m unittest && coverage report && coverage html
+```
+
 ### Web
 
 Web apps are used together with MQTT over Websockets for general visualization and to build graphical user interfaces. These live in [web/](./web). You can browse them at [localhost:9001](http://localhost:9001/).

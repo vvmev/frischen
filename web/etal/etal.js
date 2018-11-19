@@ -46,15 +46,14 @@
         .signalD("p1p3").signalA("F").signalH("F")
         .button("F").label("l", "F")
       panel.pos(2, 14).trackH("1-6")
-      // Streckentastensperre ausgelöst: Bezeichnungsfeld blinkt gelb
       panel.pos(2, 15).flipHV().trackHt()
-        .signalD("f").triangle("blockend-d")
-        .button("blockend-d").label("s", "v.Db")
+        .signalD("f").blockend("blockend-d", "v.Db")
+        .button("blockend-d")
 
       // track 2
       panel.pos(3, 0).trackHt()
-        .signalD("a").triangle("blockend-m")
-        .button("blockend-m").label("s", "v.Ma")
+        .signalD("a").blockend("blockend-m", "v.Ma")
+        .button("blockend-m")
       panel.pos(3, 1).trackH("2-1")
       panel.pos(3, 2).trackHt()
         .signalD("n2n3").signalA("A").signalH("A")

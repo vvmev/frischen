@@ -120,7 +120,10 @@ var SpDrL20Panel = (function() {
 
   let Blinker = class {
     constructor(elements, cssClass) {
-      this.elements = elements
+      if (Array.isArray(elements))
+        this.elements = elements
+      else
+        this.elements = [elements]
       this.cssClass = cssClass
     }
 
@@ -263,7 +266,7 @@ var SpDrL20Panel = (function() {
 
     subscribeTrack(indicator, elements) {
       this.panel.client.subscribe('track', indicator, (k, v) => {
-        [this.locked, this.occupied] = stringToBooleanArray(v)
+        [this.occupied, this.locked] = stringToBooleanArray(v)
         this.removeClasses(elements, ['frischen-track-locked', 'frischen-track-occupied'])
         if (this.locked)
             this.addClasses(elements, ['frischen-track-locked'])
@@ -277,6 +280,33 @@ var SpDrL20Panel = (function() {
      */
     symbol(where, symbol) {
       return where.put(this.panel.symbols[symbol].clone())
+    }
+
+    blockend(indicator, label) {
+      this.symbol(this.tracks, 'frischen-block-arrow')
+      let triangle = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
+        .addClass('frischen-signal-red')
+      let n = indicator.split("-")[0]
+      this.panel.client.subscribe(n, indicator, (k, v) => {
+        [this.occupied, this.blocked, this.clearance_lock] = stringToBooleanArray(v)
+        if (this.blocked) {
+          triangle.addClass('frischen-signal-red')
+          triangle.removeClass('frischen-signal-white')
+        } else {
+          triangle.removeClass('frischen-signal-red')
+          triangle.addClass('frischen-signal-white')
+        }
+        if (this.blinker !== undefined) {
+          this.panel.removeBlinker(this.blinker)
+          this.blinker = undefined
+        }
+        if (!this.clearance_lock) {
+          this.blinker = this.panel.addBlinker([this.labels], 'frischen-switch-position')
+        }
+        console.log('blocked: ' + this.blocked + ', clearance: ' + this.clearance_lock)
+      })
+      this.label("s", label)
+      return this
     }
 
     button(actuator) {
@@ -348,6 +378,7 @@ var SpDrL20Panel = (function() {
     }
 
     turnout(indicator) {
+      this.occupied = false
       this.position = false
       this.moving = false
       this.locked = false
@@ -362,7 +393,7 @@ var SpDrL20Panel = (function() {
       let track2 = this.symbol(this.indicators, 'frischen-track-indicator-h2')
       let occupied = [track1, track2]
       this.panel.client.subscribe('turnout', indicator, (k, v) => {
-        [this.position, this.moving, this.locked, this.blocked] = stringToBooleanArray(v)
+        [this.occupied, this.position, this.moving, this.locked, this.blocked] = stringToBooleanArray(v)
         console.log("turnout " + k + " position " + this.position + ", moving " + this.moving)
         if (this.position) {
           this.active = leg1.addClass('frischen-switch-position')
@@ -379,16 +410,15 @@ var SpDrL20Panel = (function() {
           this.blinker = this.panel.addBlinker([this.active], 'frischen-switch-position')
         }
         let active = this.position ? track1 : track2
-          this.removeClasses([track1, track2], ['frischen-track-locked'])
+        this.removeClasses([track1, track2], ['frischen-track-locked'])
         if (this.locked) {
           this.addClasses([active], ['frischen-track-locked'])
         }
-      })
-      this.panel.client.subscribe('track', indicator, (k, v) => {
-        this.removeClasses(occupied, ['frischen-track-locked', 'frischen-track-occupied'])
-        switch(v) {
-          case 'o':
-            this.addClasses(occupied, ['frischen-track-occupied']); break
+        if (this.occupied) {
+          this.removeClasses([track1, track2], ['frischen-track-locked'])
+          this.addClasses(occupied, ['frischen-track-occupied'])
+        } else {
+          this.removeClasses(occupied, ['frischen-track-occupied'])
         }
       })
       return this
@@ -401,7 +431,7 @@ var SpDrL20Panel = (function() {
         switch(v) {
           case 'Hp0-Zs1':
           case 'Zs1':
-            light.addClass('frischen-signal-yellow')
+            light.addClass('frischen-signal-white')
             break
           default:
             light.attr('class', '');
@@ -450,7 +480,7 @@ var SpDrL20Panel = (function() {
           case 'Hp0-Sh1':
           case 'Sh1':
           case 'Ra12':
-            light.attr('class', 'frischen-signal-yellow'); break
+            light.attr('class', 'frischen-signal-white'); break
           default:
             light.attr('class', ''); break
         }
@@ -494,14 +524,16 @@ var SpDrL20Panel = (function() {
       let triangle = this.symbol(this.indicators, 'frischen-block-arrow-indicator')
         .addClass('frischen-signal-red')
       let n = indicator.split("-")[0]
-      this.panel.client.subscribe(n, indicator, function(k, v) {
-        if (stringToBoolean(v)) {
+      this.panel.client.subscribe(n, indicator, (k, v) => {
+        [this.occupied, this.blocked, this.clearance_lock] = stringToBooleanArray(v)
+        if (this.blocked) {
           triangle.addClass('frischen-signal-red')
-          triangle.removeClass('frischen-signal-yellow')
+          triangle.removeClass('frischen-signal-white')
         } else {
           triangle.removeClass('frischen-signal-red')
-          triangle.addClass('frischen-signal-yellow')
+          triangle.addClass('frischen-signal-white')
         }
+        console.log('blocked: ' + this.blocked)
       })
       return this
     }

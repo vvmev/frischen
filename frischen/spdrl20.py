@@ -4,14 +4,26 @@ import logging
 from inspect import isclass
 
 from hbmqtt.client import MQTTClient, ClientException
-from hbmqtt.mqtt.constants import QOS_0
+from hbmqtt.mqtt.constants import QOS_2
 
 
 logger = logging.getLogger(__name__)
 
 
 def to_bool(v):
-    return v in [1, '1', 't', 'T', 'true', 'True', 'y', 'yes']
+    """Returns True if value represents a true-ish value."""
+    return v in [1, True, '1', 't', 'T', 'true', 'True', 'y', 'yes']
+
+
+def array_to_str(ary):
+    """Return a string representing the array."""
+    r = []
+    for i in ary:
+        if isinstance(i, bool):
+            r.append('{:b}'.format(i))
+        else:
+            r.append(str(i))
+    return ','.join(r)
 
 
 class PubSubTopic():
@@ -20,174 +32,291 @@ class PubSubTopic():
         self.subscribers = []
 
     def subscribe(self, name, fn):
+        """Register callback to be called when publish() is called."""
         self.subscribers.append((name, fn))
 
     def publish(self, *args, **kwargs):
+        """Call all registered subscribers."""
         for name, fn in self.subscribers:
             logger.debug(f'post {name} {args}')
             fn(*args, **kwargs)
 
 
+class MQTTDispatcher():
+    """Subscribe to one or more MQTT topics, and call the registered callbacks with the messages received."""
+
+    def __init__(self, client):
+        self.client = client
+        self.subscribers = {}
+        self.connected = True
+
+    def subscribe(self, topic, name, fn):
+        """Subscribe a callback function to a topic."""
+        if topic not in self.subscribers:
+            self.subscribers[topic] = PubSubTopic()
+        self.subscribers[topic].subscribe(name, fn)
+
+    def dispatch_one(self, topic, value):
+        """Dispatch one message to all subscribers."""
+        if topic in self.subscribers:
+            self.subscribers[topic].publish(topic, value)
+
+    async def dispatch(self):
+        """Receive and dispatch messages until told to stop."""
+        await self.client.subscribe([(t, QOS_2) for t in self.subscribers.keys()])
+
+        while self.connected:
+            message = await self.client.deliver_message()
+            packet = message.publish_packet
+            topic = packet.variable_header.topic_name
+            value = packet.payload.data.decode()
+            self.dispatch_one(topic, value)
+
+        await self.client.unsubscribe(self.subscribers.keys())
+
+
 class ElementManager():
-    """
-    Manage the collection of objects created from a class.
-    """
+    """Manage the collection of elements created from a class."""
+
     def __init__(self):
         self.objects = {}
 
+    def all(self):
+        """Return all registered elements."""
+        return self.objects.values()
+
+    def get(self, name):
+        if isinstance(name, str):
+            return self.objects.get(name)
+        if name in self.objects.values():
+            return name
+        return None
+
+    def entries(self):
+        return self.objects
+
     def register(self, element):
+        """Register an element with this manager."""
         self.objects[element.name] = element
 
+    def reset_all(self):
+        """
+        Bring all objects to a defined state.
+
+        By calling each element's reset() method, all properties are reset, and the element's state is published."""
+        for e in self.all():
+            e.reset()
+
     def unregister(self, element):
+        """
+        Remove element from the manager.
+
+        The element to be removed can be specified by the object or its name.
+        """
         if element in self.objects:
             del self.objects[element]
         if 'name' in element:
             del self.objects[element.name]
 
-    def all(self):
-        return self.objects.values()
-
-    def initialize_all(self):
-        for e in self.all():
-            e.initialize()
-
-
-class ElementValueProperty():
-    def __init__(self, label):
-        self.label = label
-
-    def __get__(self, instance, owner):
-        return instance.__dict__.get(self.label)
-
-    def __set__(self, instance, value):
-        instance.__dict__[self.label] = value
-
 
 class Element():
-    """
-    The base class for elements of the signal tower.
+    """The base class for elements of the signal tower.
 
     There is one state variable, occupied, which shows whether the track represented by this element is currently
     occupied by a train.
+
     This is an abstract base class.
     """
-    objects = ElementManager()
 
-    occupied = ElementValueProperty('occupied')
+    objects = ElementManager()
 
     def __init__(self, tower, name):
         self.kind = self.__class__.__name__.lower()
         self.name = name
         self.objects.register(self)
         self.tower = tower
-        self.pressed = False
+        self.pushed = False
         self.task = None
+        self.properties = ['occupied']
+        self.on_update = PubSubTopic()
+        self.tower.dispatcher.subscribe(self.tower.panel_topic('button', self.name), str(self), self.on_button)
 
-    def set(self, **kwargs):
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.name}>'
+
+    def on_button(self, topic, value):
+        self.pushed = to_bool(value)
+
+    def publish(self):
+        self.tower.publish(self.topic(), self.value.encode('utf-8'))
+        self.on_update.publish(self.value)
+
+    def reset(self):
+        self.occupied = False
+        self.publish()
+
+    def topic(self):
+        return self.tower.panel_topic(self.kind, self.name)
+
+    def update(self, **kwargs):
         for k, v in kwargs.items():
+            if k not in self.properties:
+                raise KeyError(f'property "{k}" is not valid for {self.__class__.__name__}')
             self.__dict__[k] = v
         self.publish()
 
     @property
     def value(self):
-        return '{:b}'.format(self.occupied)
-
-    def initialize(self):
-        self.__dict__['occupied'] = False
-        self.publish()
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}<{self.name}>'
-
-    def topic(self):
-        return self.tower.topic(self.kind, self.name)
-
-    def publish(self):
-        # logger.debug(f'{self}.publish({self.kind}, {self.value})')
-        self.tower.publish(self.topic(), self.value.encode('utf-8'))
-
-    def on_button(self, pressed):
-        logger.debug(f'Unimplemented on_button() for class {self}')
-        pass
+        return array_to_str([self.__dict__[k] for k in self.properties])
 
 
 class BlockEnd(Element):
     """
     The line block apparatus at the end of line.
 
-    The two state variables are:
+    This element has two state variables, on top of the general occupied status:
+    * blocked: if True, the block is locked, and no train must enter
+    * clearance_lock: if True, the train has not yet gone past the block signal, and the block cannot be unlocked.
     """
-    blocked = ElementValueProperty('blocked')
 
-    @property
-    def value(self):
-        return '{:b},{:b}'.format(self.occupied, self.blocked)
+    objects = ElementManager()
 
-    def initialize(self):
-        self.__dict__['blocked'] = False
-        super().initialize()
+    def __init__(self, tower, name, blockstart_topic, clearance_lock_release_topic):
+        super().__init__(tower, name)
+        self.properties += ('blocked', 'clearance_lock')
+        self.blocked = False
+        self.clearance_lock = True
+        if not '/' in blockstart_topic:
+            blockstart_topic = self.tower.trackside_topic('block', blockstart_topic)
+        if not '/' in clearance_lock_release_topic:
+            clearance_lock_release_topic = self.tower.trackside_topic('track', clearance_lock_release_topic)
+        self.tower.dispatcher.subscribe(clearance_lock_release_topic, str(self), self.on_clearance_lock_release)
+        self.tower.dispatcher.subscribe(blockstart_topic, str(self), self.on_block_start)
 
-    def on_button(self, pressed):
-        if pressed and self.tower.is_outer_button('BlGT'):
-            self.pressed = True
-        else:
-            self.pressed = False
+    def on_block_start(self, topic, value):
+        """The start of the line has locked the block."""
+        value = to_bool(value)
+        if value:
+            self.update(blocked=True)
+
+    def on_button(self, topic, value):
+        """The signalman has pushed the button."""
+        super().on_button(topic, value)
+        if self.pushed and self.tower.is_outer_button('BlGT') \
+                and not self.clearance_lock:
+            self.update(blocked=False, clearance_lock=True)
+
+    def on_clearance_lock_release(self, topic, value):
+        """If the track segment has transitioned from occupied to unoccupied, the clearance lock is unlocked."""
+        value = to_bool(value)
+        if not value and self.clearance_lock:
+            self.update(clearance_lock=False)
+
+    def reset(self):
+        self.blocked = False
+        self.clearance_lock = True
+        super().reset()
 
 
 class BlockStart(Element):
-    pass
+    """The line block apparatus at the beginning of the line.
+
+    The block is locked when the train occupies this track segment, and unlocked when the remote block end unlocks it.
+    """
+
+    objects = ElementManager()
+
+    def __init__(self, tower, name, blockend_topic, blocking_track_topic):
+        super().__init__(tower, name)
+        self.properties += ('blocked',)
+        self.blocked = False
+        if not '/' in blockend_topic:
+            blockend_topic = self.tower.trackside_topic('block', blockend_topic)
+        if not '/' in blocking_track_topic:
+            blocking_track_topic = self.tower.trackside_topic('track', blocking_track_topic)
+        self.tower.dispatcher.subscribe(blockend_topic, str(self), self.on_blockend)
+        self.tower.dispatcher.subscribe(blocking_track_topic, str(self), self.on_blocking_track)
+
+    def on_blockend(self, topic, value):
+        """Block apparatus at the end of the block has been unblocked."""
+        if not to_bool(value):
+            self.update(blocked=False)
+
+    def on_blocking_track(self, topic, value):
+        """Track at the beginning of the block has been occupied and clear again."""
+        if not to_bool(value):
+            self.update(blocked=True)
+
+    def reset(self):
+        self.blocked = False
+        super().reset()
 
 
 class Counter(Element):
-    def __init__(self, tower, name):
+    """Counts relevant operations on the panel."""
+
+    objects = ElementManager()
+
+    def __init__(self, tower, name, button=None):
         super().__init__(tower, name)
-        if name in tower.outer_buttons:
-            tower.outer_buttons[name].counter = self
+        self.count = 0
+        self.properties = ['count']
+        if button is None:
+            button = OuterButton.objects.get(name)
+        if button is None:
+            raise KeyError(f'There is no button {name}')
+        button.counter = self
 
     def increment(self):
-        self.value += 1
+        """Register a substitute procedure operation."""
+        self.count += 1
+        self.publish()
+
+    def reset(self):
+        self.count = 0
+        super().reset()
 
 
 class DistantSignal(Element):
-    initial_value = 'Vr0'
-    aspects = ['Vr0', 'Vr1', 'Vr2']
+    """Controls the distant signal based on the aspect of one or more home signals.
+
+    Since the distant signal can indicate the aspect of different home signals, based on the position of one or more
+    turnouts, a some logic is implemented to be able to configure these conditions.
+
+    Additionally, if the distant signal is mounted to the same mast as a home signal, the distant signal will be
+    switched off if the home signal is showing a stop aspect.
+    """
+
+    objects = ElementManager()
+
     translated_aspects = { 'Hp0': 'Vr0', 'Hp1': 'Vr1', 'Hp2': 'Vr2' }
 
     def __init__(self, tower, name, home, mounted_at=None):
         super().__init__(tower, name)
         self.mounted_at = None
+        self.aspect = 'Vr0'
+        self.properties = ['aspect']
         if mounted_at is not None:
-            self.mounted_at = tower.get('signal', mounted_at)
-            self.mounted_at.on_change.subscribe('mounted_at', self.mounted_at_changed)
+            self.mounted_at = Signal.objects.get(mounted_at)
+            self.mounted_at.on_update.subscribe('mounted_at', self.mounted_at_changed)
         if isinstance(home, str):
-            signal = self.tower.get('signal', home)
-            signal.on_change.subscribe(f'{self}', lambda aspect: self.start_distant(aspect))
+            signal = Signal.objects.get(home)
+            signal.on_update.subscribe(f'{self}', lambda aspect: self.start_distant(aspect))
         if isinstance(home, dict):
             k = next(iter(home))
-            turnout = self.tower.get('turnout', k)
-            signals = [self.tower.get('signal', s) for s in home[k]]
-            signals[0].on_change.subscribe(
+            turnout = Turnout.objects.get(k)
+            signals = [Signal.objects.get(s) for s in home[k]]
+            signals[0].on_update.subscribe(
                 f'{self}',
                 lambda aspect:
                 self.start_distant(aspect) if turnout.position==0 else False)
-            signals[1].on_change.subscribe(
+            signals[1].on_update.subscribe(
                 f'{self}',
                 lambda aspect:
                 self.start_distant(aspect) if turnout.position==1 else False)
 
-    @Element.value.setter
-    def value(self, value):
-        if value in self.translated_aspects:
-            value = self.translated_aspects[value]
-        if not value in self.aspects:
-            return
-        Element.value.fset(self, value)
-
     def topic(self):
-        return self.tower.topic('signal', self.name)
-
-    def on_button(self, pressed):
-        pass
+        return self.tower.panel_topic('signal', self.name)
 
     def publish(self):
         if self.mounted_at is not None and self.mounted_at.value == 'Hp0':
@@ -196,32 +325,29 @@ class DistantSignal(Element):
             super().publish()
 
     def start_distant(self, aspect):
-        logger.debug(f'{self}.start_distant({aspect})')
-        self.value = aspect
+        if aspect in self.translated_aspects:
+            aspect = self.translated_aspects[aspect]
+        self.update(aspect=aspect)
 
     def mounted_at_changed(self, aspect):
         self.publish()
 
 
 class Signal(Element):
-    initial_value = 'Hp0'
+    """Controls a home signal."""
+
+    objects = ElementManager()
 
     def __init__(self, tower, name):
         super().__init__(tower, name)
-        # self.__value = 'Hp0'
+        self.alt_timeout = 15
+        self.aspect = 'Hp0'
+        self.properties = ['aspect']
         self.aspects = []
-        self.on_change = PubSubTopic()
 
-    @Element.value.setter
-    def value(self, value):
-        if not value in self.aspects:
-            return
-        Element.value.fset(self, value)
-        self.on_change.publish(value)
-
-    def on_button(self, pressed):
-        self.pressed = pressed
-        if pressed:
+    def on_button(self, topic, value):
+        super().on_button(topic, value)
+        if self.pushed:
             if self.tower.is_outer_button('SGT'):
                 self.start_change_shunting()
                 return
@@ -232,143 +358,110 @@ class Signal(Element):
                 self.start_alt()
                 return
             if self.tower.is_outer_button('FHT'):
-                for route in self.tower.routes.values():
+                for route in Route.objects.all():
                     if route.s1 == self and route.locked:
+                        Counter.objects.get('FHT').increment()
                         route.unlock()
+                        return
                 return
 
             pushed = []
-            for e in self.all(self.tower):
-                if e.pressed:
+            for e in self.objects.all():
+                if e.pushed:
                     pushed.append(e)
             if len(pushed) == 2:
-                route = f'{pushed[0].name},{pushed[1].name}'
-                if route in self.tower.routes:
-                    self.tower.routes[route].start()
-                else:
-                    route = f'{pushed[1].name},{pushed[0].name}'
-                    if route in self.tower.routes:
-                        self.tower.routes[route].start()
+                route = Route.objects.find_by_signals(pushed)
+                if route:
+                    route.start()
 
-    def alt(self):
+    def add_alt(self):
         self.aspects += ['Zs1']
         return self
 
-    def home(self):
+    def add_home(self):
         self.aspects += ['Hp0', 'Hp1', 'Hp2']
         return self
 
-    def shunting(self):
+    def add_shunting(self):
         self.aspects += ['Sh1']
         return self
 
     def start_alt(self):
-        if 'Zs1' in self.aspects and self.value == 'Hp0':
+        if 'Zs1' in self.aspects and self.aspect == 'Hp0':
             if self.task:
                 self.task.cancel()
             self.task = asyncio.create_task(self.change_alt())
+            Counter.objects.get('ErsGT').increment()
         else:
             logger.debug(f'Not activating Zs1: {self.value}')
 
     async def change_alt(self):
-        self.value = 'Zs1'
-        await asyncio.sleep(15)
-        self.value = 'Hp0'
+        self.update(aspect='Zs1')
+        await asyncio.sleep(self.alt_timeout)
+        self.update(aspect='Hp0')
 
     def start_halt(self):
         if self.task:
             self.task.cancel()
-        if self.value != 'Hp0':
-            self.value = 'Hp0'
+        if self.aspect != 'Hp0':
+            self.update(aspect='Hp0')
 
     def start_change_shunting(self):
         if 'Sh1' in self.aspects:
-            if self.value == 'Hp0':
-                self.value = 'Sh1'
+            if self.aspect == 'Hp0':
+                self.update(aspect='Sh1')
 
     def start_home(self, aspect):
-        self.value = aspect
+        self.update(aspect=aspect)
 
 
 class Track(Element):
-    initial_value = (0, 0)
+    """Manages a segment of track."""
+
+    objects = ElementManager()
 
     def __init__(self, tower, name):
         super().__init__(tower, name)
-        self.locked = 0
-        self.occupied = 0
+        self.locked = False
+        self.properties += ['locked']
+        self.tower.dispatcher.subscribe(self.tower.trackside_topic('track', name), str(self), self.on_occupied)
 
-    @property
-    def value(self):
-        v = ','.join([str(i) for i in [self.locked, self.occupied]])
-        return v
-
-    @value.setter
-    def value(self, value):
-        (self.locked, self.occupied) = value
-        self.publish()
-
-    def set_locked(self, locked):
-        self.locked = locked
-        self.publish()
-
-    def set_blocked(self, occupied):
-        self.occupied = occupied
-        self.publish()
+    def on_occupied(self, topic, value):
+        self.update(occupied=to_bool(value))
 
 
 class Turnout(Element):
-    initial_value = (0, 0, 0, 0)
+    """Manages a turnout."""
 
-    def on_button(self, pressed):
-        # logger.debug(f'{self} => {pressed}')
-        if pressed and self.tower.is_outer_button('WGT') \
+    objects = ElementManager()
+
+    def __init__(self, tower, name):
+        super().__init__(tower, name)
+        self.position = False
+        self.moving = False
+        self.locked = False
+        self.blocked = False
+        self.properties += ['position', 'moving', 'locked', 'blocked']
+        self.moving_timeout = 6
+        self.task = None
+
+    def reset(self):
+        self.position = False
+        self.moving = False
+        self.locked = False
+        self.blocked = False
+        super().reset()
+
+    def on_button(self, topic, value):
+        super().on_button(topic, value)
+        if self.pushed and self.tower.is_outer_button('WGT') \
                 and not self.locked and not self.blocked \
                 and not self.occupied:
             self.start_change()
 
-    def __init__(self, tower, name):
-        super().__init__(tower, name)
-        self.position = 0
-        self.moving = 0
-        self.locked = 0
-        self.blocked = 0
-        self.occupied = 0
-        self.task = None
-
-    def initialize(self):
-        self.position = 1
-        self.start_change(0)
-
-    @property
-    def value(self):
-        v = ','.join([str(i) for i in [self.position, self.moving, self.locked, self.blocked]])
-        return v
-
-    @value.setter
-    def value(self, value):
-        (self.position, self.moving, self.locked, self.blocked) = value
-        self.publish()
-
-    def set_position(self, position):
-        self.position = position
-        self.publish()
-
-    def set_moving(self, moving):
-        self.moving = moving
-        self.publish()
-
-    def set_locked(self, locked):
-        self.locked = locked
-        self.publish()
-
-    def set_blocked(self, blocked):
-        self.blocked = blocked
-        self.publish()
-
     def start_change(self, position=None):
         if position is None:
-            position = 1 if self.position == 0 else 0
+            position = not self.position
         if self.task:
             self.task.cancel()
         self.task = asyncio.create_task(self.change(position))
@@ -378,63 +471,98 @@ class Turnout(Element):
         if position == self.position:
             return
         self.position = position
-        self.moving = 1
-        self.publish()
+        self.update(moving=True)
 
-        await asyncio.sleep(6)
-        self.moving = 0
-        self.publish()
+        await asyncio.sleep(self.moving_timeout)
+        self.update(moving=False)
 
 
-class OuterButton():
+class OuterButton(Element):
+    """Records an outer button."""
+
+    objects = ElementManager()
+
     def __init__(self, tower, name):
-        self.tower = tower
-        self.name = name
-        self.task = None
-        self.pressed = 0
+        super().__init__(tower, name)
+        self.properties = []
         self.counter = None
-        self.task = None
-        self.tower.outer_buttons[self.name] = self
 
-    def __repr__(self):
-        return f'OuterButton<{self.name}>'
+    def add_counter(self):
+        """Add a counter to this button."""
+        self.counter = Counter(self.tower, self.name)
+        return self
 
-    def set(self, pressed):
-        self.pressed = pressed
-        if pressed and self.counter is not None:
+    def count(self):
+        """Increment the counter for this button."""
+        if self.counter is not None:
             self.counter.increment()
+
+    def publish(self):
+        """No state to publish."""
+        pass
+
+    def update(self, **kwargs):
+        """No state to update."""
+        raise KeyError(f'{self.__class__.__name__} has no updateable properties')
+
+
+class RouteManager(ElementManager):
+    def find_by_signals(self, signals):
+        r = self.objects.get(f'{signals[0].name},{signals[1].name}')
+        if not r:
+            r = self.objects.get(f'{signals[1].name},{signals[0].name}')
+        return r
 
 
 class Route():
-    def __init__(self, tower, s1, s2):
-        self.s1 = tower.get(Signal, s1)
-        self.s2 = tower.get(Signal, s2)
+    """Manages a route.
+
+    A route connects a starting signal to a destination signal, and locks any intermediate turnouts and switches.
+    """
+
+    objects = RouteManager()
+
+    def __init__(self, tower, s1, s2, release_topic):
+        self.s1 = Signal.objects.get(s1)
+        self.s2 = Signal.objects.get(s2)
         self.name = f'{self.s1.name},{self.s2.name}'
         self.locked = False
         self.tracks = []
         self.turnouts = []
         self.flankProtections = []
         self.tower = tower
-        self.tower.routes[self.name] = self
+        self.objects.register(self)
+        if not '/' in release_topic:
+            release_topic = self.tower.trackside_topic('track', release_topic)
+        self.tower.dispatcher.subscribe(release_topic, str(self), self.on_release)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.name}>'
 
-    def turnout(self, turnout, position):
-        turnout = self.tower.get(Turnout, turnout)
+    def reset(self):
+        pass
+
+    def add_turnout(self, turnout, position):
+        turnout = Turnout.objects.get(turnout)
         self.turnouts.append((turnout, position))
         self.tracks.append(turnout)
         return self
 
-    def flankProtection(self, turnout, position):
-        turnout = self.tower.get(Turnout, turnout)
+    def add_flank_protection(self, turnout, position):
+        turnout = Turnout.objects.get(turnout)
         self.flankProtections.append((turnout, position))
         return self
 
-    def track(self, track):
-        track = self.tower.get(Track, track)
+    def add_track(self, track):
+        track = Track.objects.get(track)
         self.tracks.append(track)
         return self
+
+    def on_release(self, topic, value):
+        """If the track segment has transitioned from occupied to unoccupied, the clearance lock is unlocked."""
+        value = to_bool(value)
+        if not value:
+            self.unlock()
 
     def start(self):
         logger.debug(f'started: {self}')
@@ -451,14 +579,14 @@ class Route():
             await asyncio.sleep(0.5)
         await asyncio.wait(tasks)
         for (turnout, position) in self.turnouts + self.flankProtections:
-            turnout.set_locked(1)
+            turnout.update(locked=1)
             await asyncio.sleep(0.2)
         for track in self.tracks:
             if track.occupied:
                 logger.debug(f'Track {track} is occupied, not activating route {self}')
                 return
         for track in self.tracks:
-            track.set_locked(1)
+            track.update(locked=1)
             await asyncio.sleep(0.2)
         self.s1.start_home('Hp1')
         self.locked = True
@@ -466,98 +594,73 @@ class Route():
     def unlock(self):
         self.s1.start_home('Hp0')
         for (turnout, position) in self.turnouts + self.flankProtections:
-            turnout.set_locked(0)
+            turnout.update(locked=0)
         for track in self.tracks:
-            track.set_locked(0)
+            track.update(locked=0)
+        self.locked = False
 
 
 class Tower():
-    def __init__(self, base_topic):
-        self.client = MQTTClient()
+    def __init__(self, name, client=None):
+        if client is None:
+            self.client = MQTTClient()
+        else:
+            self.client = client
+        self.dispatcher = MQTTDispatcher(self.client)
         self.connected = False
-        self.elementClass = {}
-        self.elements = {}
-        self.outer_buttons = {}
-        self.base_topic = base_topic
-        self.routes = {}
+        self.name = name
+        self.managers = [BlockEnd, BlockStart, Counter, DistantSignal, OuterButton, Route, Signal, Track, Turnout]
 
-        self.managers = [Element.objects]
-        OuterButton(self, 'AsT')
-        Counter(self, 'AsT')
+        OuterButton(self, 'AsT').add_counter()
         OuterButton(self, 'BlGT')
-        OuterButton(self, 'ErsGT')
-        Counter(self, 'ErsGT')
-        OuterButton(self, 'FHT')
-        Counter(self, 'FHT')
+        OuterButton(self, 'ErsGT').add_counter()
+        OuterButton(self, 'FHT').add_counter()
         OuterButton(self, 'HaGT')
         OuterButton(self, 'SGT')
         OuterButton(self, 'WGT')
-        OuterButton(self, 'WHT')
-        Counter(self, 'WHT')
+        OuterButton(self, 'WHT').add_counter()
+
         logger.setLevel(logging.DEBUG)
 
-    async def connect(self):
-        await self.client.connect('mqtt://localhost/')
+    def reset_all(self):
+        """Reset all managed elements."""
 
-    def get(self, cls, name):
-        if isclass(cls):
-            clsname = cls.__name__.lower()
-        elif isinstance(cls, str):
-            clsname = cls.lower()
-        else:
-            raise ValueError('must specify a class or a class name string')
-        return self.elements[clsname][name]
-
-    def topic(self, kind, subject):
-        return f'{self.base_topic}/{kind}/{subject}'
-
-    def subject(self, topic, kind):
-        base = f'{self.base_topic}/{kind}'
-        i = topic.find(base)
-        return topic[len(base)+1:] if i == 0 else None
-
-    def publish(self, topic, value):
-        """
-        Publish a message and don't wait, "fire and forget" style.
-        """
-        if not self.connected:
-            return
-        logger.debug(f'Publishing {topic} = {value.decode("utf-8")}')
-        asyncio.create_task(self.client.publish(topic, value))
+        for cls in self.managers:
+            cls.objects.reset_all()
 
     def is_outer_button(self, button):
-        """
-        Return true only if this outer button is pushed, but no other.
-        """
-        if not self.outer_buttons[button].pressed:
+        """Return true only if this outer button is pushed, but no other."""
+
+        buttons = OuterButton.objects.entries()
+        if not buttons[button].pushed:
             return False
-        for b in self.outer_buttons.values():
-            if b.pressed and b.name != button:
+        for b in buttons.values():
+            if b.pushed and b.name != button:
                 return False
         return True
 
-    async def handle(self):
+    def publish(self, topic, value):
+        """Publish a message and don't wait, "fire and forget" style."""
+
+        if not self.connected:
+            return
+        logger.debug(f'Publishing {topic} = {value.decode("utf-8")}')
+        return asyncio.create_task(self.client.publish(topic, value))
+
+    def panel_topic(self, kind, subject):
+        """Return the full topic for a panel element."""
+
+        return f'frischen/{self.name}/panel/{kind}/{subject}'
+
+    def trackside_topic(self, kind, subject):
+        """Return the full topic for a trackside element."""
+
+        return f'frischen/{self.name}/trackside/{kind}/{subject}'
+
+    async def run(self):
+        """Connect to the broker and act on messages received."""
+        await self.client.connect('mqtt://localhost/')
         self.connected = True
-        for cls in self.elementClass.values():
-            cls.initialize_all(self)
-        await self.client.subscribe([
-            (self.topic('button', '#'), QOS_0)])
-        try:
-            while self.connected:
-                message = await self.client.deliver_message()
-                packet = message.publish_packet
-                button = self.subject(packet.variable_header.topic_name, 'button')
-                pressed = to_bool(packet.payload.data.decode())
-
-                if button in self.outer_buttons:
-                    self.outer_buttons[button].set(pressed)
-                else:
-                    for elementClassname in self.elements.keys():
-                        for b in self.elements[elementClassname].values():
-                            if (b.name == button):
-                                b.on_button(pressed)
-
-            await self.client.unsubscribe(['frischen/time/#'])
-            await self.client.disconnect()
-        except ClientException as ce:
-            logger.error(f"Client exception: {ce}")
+        self.reset_all()
+        await self.dispatcher.dispatch()
+        await self.client.disconnect()
