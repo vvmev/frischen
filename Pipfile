@@ -13,6 +13,7 @@ pyyaml = "*"
 [dev-packages]
 coverage = "*"
 sphinx = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"
