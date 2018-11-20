@@ -11,9 +11,9 @@ paho-mqtt = "*"
 pyyaml = "*"
 
 [dev-packages]
-coverage = "*"
+coverage = "==4.4.*"
 sphinx = "*"
-python-coveralls = "*"
+coveralls = "*"
 
 [requires]
 python_version = "3.7"
