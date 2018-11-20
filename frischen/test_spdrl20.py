@@ -317,9 +317,42 @@ class RouteTestCase(unittest.TestCase):
         self.s1 = Signal(self.tower, 's1')
         self.s2 = Signal(self.tower, 's2')
         self.uat = Route(self.tower, self.s1, self.s2, 'release_topic')
+        self.uat.step_delay = 0.001
+        self.turnout = Turnout(self.tower, 'w1')
+        self.flank_protection = Turnout(self.tower, 'w2')
+        self.track = Track(self.tower, '1-1')
+        self.turnout.reset()
+        self.flank_protection.reset()
+        self.track.reset()
+        self.uat.add_flank_protection(self.flank_protection.name, False)
+        self.uat.add_track(self.track.name)
+        self.uat.add_turnout(self.turnout.name, False)
 
     def test_init(self):
         self.assertIn(self.uat, Route.objects.all())
+
+    async def async_start_route(self):
+        """Full route lock is established on the route and all elements.
+        """
+        await self.uat.start()
+        self.assertTrue(self.uat.locked)
+        self.assertTrue(self.turnout.locked)
+        self.assertTrue(self.flank_protection.locked)
+        self.assertTrue(self.track.locked)
+
+    def test_start_route(self):
+        asyncio.get_event_loop().run_until_complete(self.async_start_route())
+
+    def test_unlock(self):
+        self.uat.locked = True
+        self.turnout.locked = True
+        self.flank_protection.locked = True
+        self.track.locked = True
+        self.uat.unlock()
+        self.assertFalse(self.uat.locked)
+        self.assertFalse(self.turnout.locked)
+        self.assertFalse(self.flank_protection.locked)
+        self.assertFalse(self.track.locked)
 
 
 class SignalTestCase(unittest.TestCase):
@@ -389,7 +422,7 @@ class SignalTestCase(unittest.TestCase):
 
     async def async_alt_alt_aspect(self):
         self.uat.add_alt()
-        self.uat.alt_timeout = 0.001
+        self.uat.alt_delay = 0.001
         self.tower.is_outer_button = lambda b: b=='ErsGT'
         self.tower.publish.reset_mock()
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
@@ -417,6 +450,47 @@ class SignalTestCase(unittest.TestCase):
             fn.assert_called_once_with()
 
 
+class TowerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.client = create_autospec(MQTTClient)
+        self.client.publish = get_async_mock(None)
+        self.uat = Tower('uat', self.client)
+
+    def test_init(self):
+        self.assertEqual(len(self.uat.managers), 9)
+        self.uat.reset_all()
+
+    def test_is_outer_button_not_pressed(self):
+        """After reset, no outer button should be pressed."""
+        self.assertFalse(self.uat.is_outer_button('WGT'))
+
+    def test_is_outer_button_wgt_pushed(self):
+        """An outer buttons is pressed."""
+        b = OuterButton.objects.get('WGT')
+        self.assertIsNotNone(b)
+        b.pushed = True
+        self.assertTrue(self.uat.is_outer_button('WGT'))
+
+    def test_is_outer_button_multiple_pushed(self):
+        """More than one outer button is pressed."""
+        b = OuterButton.objects.get('WGT')
+        self.assertIsNotNone(b)
+        b.pushed = True
+        b = OuterButton.objects.get('ErsGT')
+        self.assertIsNotNone(b)
+        b.pushed = True
+        self.assertFalse(self.uat.is_outer_button('WGT'))
+
+    async def async_publish(self):
+        """Calling publish on the tower calls MQTTClient.publish()."""
+        self.uat.connected = True
+        await self.uat.publish('topic', b'value')
+        self.client.publish.assert_called_once_with('topic', b'value')
+
+    def test_publish(self):
+        asyncio.get_event_loop().run_until_complete(self.async_publish())
+
+
 class TrackTestCase(unittest.TestCase):
     def setUp(self):
         self.tower = get_tower_mock()
@@ -438,43 +512,6 @@ class TrackTestCase(unittest.TestCase):
         self.tower.publish.assert_called_once_with('panel/track/uat', b'0,1')
 
 
-class TowerTestCase(unittest.TestCase):
-    def setUp(self):
-        self.client = create_autospec(MQTTClient)
-        self.client.publish = get_async_mock(None)
-        self.uat = Tower('uat', self.client)
-
-    def test_init(self):
-        self.assertEqual(len(self.uat.managers), 9)
-        self.uat.reset_all()
-
-    def test_is_outer_button_not_pressed(self):
-        self.assertFalse(self.uat.is_outer_button('WGT'))
-
-    def test_is_outer_button_wgt_pushed(self):
-        b = OuterButton.objects.get('WGT')
-        self.assertIsNotNone(b)
-        b.pushed = True
-        self.assertTrue(self.uat.is_outer_button('WGT'))
-
-    def test_is_outer_button_multiple_pushed(self):
-        b = OuterButton.objects.get('WGT')
-        self.assertIsNotNone(b)
-        b.pushed = True
-        b = OuterButton.objects.get('ErsGT')
-        self.assertIsNotNone(b)
-        b.pushed = True
-        self.assertFalse(self.uat.is_outer_button('WGT'))
-
-    async def async_publish(self):
-        self.uat.connected = True
-        await self.uat.publish('topic', b'value')
-        self.client.publish.assert_called_once_with('topic', b'value')
-
-    def test_publish(self):
-        asyncio.get_event_loop().run_until_complete(self.async_publish())
-
-
 class TurnoutTestCase(unittest.TestCase):
     def setUp(self):
         self.tower = get_tower_mock()
@@ -491,7 +528,7 @@ class TurnoutTestCase(unittest.TestCase):
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
 
     async def async_change_with_outer_button(self):
-        self.uat.moving_timeout = 0.001
+        self.uat.moving_delay = 0.001
         self.tower.is_outer_button = lambda b: b=='WGT'
         self.tower.dispatcher.dispatch_one(self.tower.panel_topic('button', 'uat'), '1')
         self.assertIsNotNone(self.uat.task, 'change task is running')

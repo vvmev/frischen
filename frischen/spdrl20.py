@@ -344,7 +344,7 @@ class Signal(Element):
 
     def __init__(self, tower, name):
         super().__init__(tower, name)
-        self.alt_timeout = 15
+        self.alt_delay = 15
         self.aspect = 'Hp0'
         self.properties = ['aspect']
         self.aspects = []
@@ -401,7 +401,7 @@ class Signal(Element):
 
     async def change_alt(self):
         self.update(aspect='Zs1')
-        await asyncio.sleep(self.alt_timeout)
+        await asyncio.sleep(self.alt_delay)
         self.update(aspect='Hp0')
 
     def start_halt(self):
@@ -442,7 +442,7 @@ class Turnout(Element):
         self.locked = False
         self.blocked = False
         self.properties += ['position', 'moving', 'locked', 'blocked']
-        self.moving_timeout = 6
+        self.moving_delay = 6
         self.task = None
 
     def reset(self):
@@ -473,7 +473,7 @@ class Turnout(Element):
         self.position = position
         self.update(moving=True)
 
-        await asyncio.sleep(self.moving_timeout)
+        await asyncio.sleep(self.moving_delay)
         self.update(moving=False)
 
 
@@ -532,6 +532,7 @@ class Route():
         self.flankProtections = []
         self.tower = tower
         self.objects.register(self)
+        self.step_delay = 0.2
         if not '/' in release_topic:
             release_topic = self.tower.trackside_topic('track', release_topic)
         self.tower.dispatcher.subscribe(release_topic, str(self), self.on_release)
@@ -566,7 +567,7 @@ class Route():
 
     def start(self):
         logger.debug(f'started: {self}')
-        asyncio.create_task(self.change())
+        return asyncio.create_task(self.change())
 
     async def change(self):
         tasks = []
@@ -574,20 +575,27 @@ class Route():
             if turnout.locked:
                 logger.debug(f'Turnout {turnout} is already locked, not activating route {self}')
                 return
+            if turnout.occupied:
+                logger.debug(f'Turnout {turnout} is occupied, not activating route {self}')
+                return
         for (turnout, position) in self.turnouts + self.flankProtections:
             tasks.append(turnout.start_change(position))
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(self.step_delay)
         await asyncio.wait(tasks)
         for (turnout, position) in self.turnouts + self.flankProtections:
+            if turnout.occupied:
+                logger.debug(f'Turnout {turnout} is occupied, not activating route {self}')
+                return
+        for (turnout, position) in self.turnouts + self.flankProtections:
             turnout.update(locked=1)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(self.step_delay)
         for track in self.tracks:
             if track.occupied:
                 logger.debug(f'Track {track} is occupied, not activating route {self}')
                 return
         for track in self.tracks:
             track.update(locked=1)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(self.step_delay)
         self.s1.start_home('Hp1')
         self.locked = True
 
