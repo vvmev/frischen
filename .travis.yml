@@ -9,6 +9,6 @@ notifications:
 install:
 - pipenv install --system --deploy --ignore-pipfile --dev
 script:
-- coverage run -m unittest
+- coverage run -m unittest && coverage report
 after_success:
 - coveralls
