@@ -2,8 +2,11 @@ language: python
 sudo: true
 dist: xenial
 python:
-  - 3.7
+- 3.7
+notifications:
+  slack:
+    secure: GL+CqfKWa7Kd/jlPpL9q3tt0rADZ+XsxUduUGdBv3Y72eUc+/R4svp0er7LLuotrCdbBdVHu0p5GgH9/M1HkjAoHVIQHqSBpSqrOi3kPjxPNCHXt71cgjSOCfROJDDRcwxMsqsBZ6D7rY2Lb9tDClwrq2TTVFrFZA/LpXbc3bHGqL231bCvWJK0AxTvsYtqiqOtdty/xIicspXF/tl0q8Gt3WyJA3QCD5pJz0IPKIYPhYH9iRTjSXO5B6A4vftCa2w8hpPqsVnGBXM52inf820eZH2KYE23fe0aObptcfO+sD48EWY/Ly2SJjs50TVer5WOAVrc5/oUwVLqsv5ipFT/RdPnUD6xoKKN32m5kY0GRRLvqSvmKiBn3++bWgFvCX/PC4Vpmb14oOx9AIBnwXVJP3dA6OJqwqD9+YjrOE4/XJcAYwekHuEFPaXcCHGxS7BwltTMKR3pMokXwyKaNp0Jvdv1FIDVSTVeUOC3OEuvgCTml9gNlH9bZam5uZ+IF7TjrGNq1UHdrjybyARATnGoB4VR7WKtVASHV2H5bjwXFZ0pM3QSGf2iJfGk/H8YW44kfl7HtFB2Dd0MSCF+YV2klO0wu0aG7jdBMeLdxTMsPoIl9GKh9QBFP2rU0zXtq5Hv+UwH4sE/CcjE+F4AO4rSxXFw+1Lc03EFvMl9T/bM=
 install:
-  - pipenv install --system --deploy --ignore-pipfile --dev
+- pipenv install --system --deploy --ignore-pipfile --dev
 script:
-  - coverage run -m unittest
+- coverage run -m unittest
