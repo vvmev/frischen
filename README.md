@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/vvmev/frischen.svg?branch=master)](https://travis-ci.org/vvmev/frischen) 
 # frischen
 A loosely coupled set of components for (simulated) signal towers
 
