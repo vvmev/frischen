@@ -4,6 +4,10 @@
 # frischen
 A loosely coupled set of components for (simulated) signal towers
 
+## Documentation
+
+Documentation is available at [VVMeV Frischen Github Pages](https://vvmev.github.io/frischen/).  It is built automatically from the files in (`docs`)[./docs] and the source code.
+
 ## Run Mosquitto Broker
 
 Make sure you have a working setup of Docker Compose. Then simply `docker-compose up` to start up the broker.
