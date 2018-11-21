@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "36004e0f6091f05fdb3b5c72d77264e9f0f2986b62477cfe0c83003eebae53c6"
+            "sha256": "65d95dbecce74fbd67f85826edee56b5a7f4e3fe6f2206307d5712a8214895ab"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -267,6 +267,29 @@
             ],
             "version": "==18.0"
         },
+        "pbr": {
+            "hashes": [
+                "sha256:f59d71442f9ece3dffc17bc36575768e1ee9967756e6b6535f0ee1f0054c3d68",
+                "sha256:f6d5b23f226a2ba58e14e49aa3b1bfaf814d0199144b95d78458212444de1387"
+            ],
+            "version": "==5.1.1"
+        },
+        "pipenv": {
+            "hashes": [
+                "sha256:117b0015837578cef25ee09c9d38094245966cbff92f0984e0f0fbebdbb5bc75",
+                "sha256:5f760d35de14982353437442d0d2c474bee139ffd69c01148abc11509f6422da",
+                "sha256:7e4b827307e6070468284caa332fcba9c60e532afd2a8ff4c0d6df8be6b9fadb"
+            ],
+            "version": "==2018.11.14"
+        },
+        "pipenv-to-requirements": {
+            "hashes": [
+                "sha256:c20f905dfe4d93bc41486a36b87cf479f2d6b30b006649b57af68a0ab6bd48a8",
+                "sha256:d3d633c213d2fae0d2dceec26c9c67fdbeb48b56eeee66c9b2153c20cd0ba306"
+            ],
+            "index": "pypi",
+            "version": "==0.6.1"
+        },
         "pygments": {
             "hashes": [
                 "sha256:78f3f434bcc5d6ee09020f92ba487f95ba50f1e3ef83ae96b9d5ffa1bab25c5d",
@@ -338,6 +361,18 @@
                 "sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22"
             ],
             "version": "==1.24.1"
+        },
+        "virtualenv": {
+            "hashes": [
+                "sha256:686176c23a538ecc56d27ed9d5217abd34644823d6391cbeb232f42bf722baad"
+            ],
+            "version": "==16.1.0"
+        },
+        "virtualenv-clone": {
+            "hashes": [
+                "sha256:afce268508aa5596c90dda234abe345deebc401a57d287bcbd76baa140a1aa58"
+            ],
+            "version": "==0.4.0"
         }
     }
 }
