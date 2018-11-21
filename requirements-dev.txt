@@ -10,7 +10,7 @@
 # `Pipfile.lock` and then regenerate `requirements*.txt`.
 ################################################################################
 
--r production.txt
+-r requirements.txt
 
 alabaster==0.7.12
 babel==2.6.0
