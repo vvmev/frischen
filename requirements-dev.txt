@@ -1,0 +1,40 @@
+################################################################################
+# This requirements file has been automatically generated from `Pipfile` with
+# `pipenv-to-requirements`
+#
+#
+# This has been done to maintain backward compatibility with tools and services
+# that do not support `Pipfile` yet.
+#
+# Do NOT edit it directly, use `pipenv install [-d]` to modify `Pipfile` and
+# `Pipfile.lock` and then regenerate `requirements*.txt`.
+################################################################################
+
+alabaster==0.7.12
+babel==2.6.0
+certifi==2018.10.15
+chardet==3.0.4
+coverage==4.4.2
+coveralls==1.5.1
+docopt==0.6.2
+docutils==0.14
+idna==2.7
+imagesize==1.1.0
+jinja2==2.10
+markupsafe==1.1.0
+packaging==18.0
+pbr==5.1.1
+pipenv-to-requirements==0.6.1
+pipenv==2018.11.14
+pygments==2.2.0
+pyparsing==2.3.0
+pytz==2018.7
+requests==2.20.1
+six==1.11.0
+snowballstemmer==1.2.1
+sphinx-rtd-theme==0.4.2
+sphinx==1.8.2
+sphinxcontrib-websupport==1.1.0
+urllib3==1.24.1
+virtualenv-clone==0.4.0
+virtualenv==16.1.0
