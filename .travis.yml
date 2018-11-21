@@ -16,7 +16,10 @@ after_success:
 deploy:
   provider: pages
   skip-cleanup: true
-  github-token: $GITHUB_TOKEN
+  github-token: "$GITHUB_TOKEN"
   local-dir: docs/build/html
   on:
     branch: master
+env:
+  global:
+    secure: HsdkY1HiehfsxDDaEh/IeGJRVTYwmc7waHOpFvXnD1k5zHb6BonmnrQ1FVH07LKDsjVR5HX4fu4x7M4CGrs3VwhX5U+pruRmhps8MpgsRmPBQshk7VXwi+ffvoiH/ExbwDpWgCyWAGL62+ZVvA3uekw5j5sZMhWgEg4uH2GBF1zHRzwapMhLdE+dsCjxr4su9axoyf4FPSBU+wyiECgJP0MtwHzifvTph4FWTw82vhpnCqywNWPv8xpXXyfDdaaslAi+H6yU2+p2QitHYGj98/I5GBlX67E4Ovtn1Et4XAXVcEKt1zRHqVRdlPof6/rRxpwkTnk3StJIMk0bon7BrYmQCHEgcYEO8bQhulDWGh85FDNF/uy4tR7F2jCJVLiR82nmly7D0ZgRL8vi0PYJJ+xRUptgRtKDXdlWiaMfAbC6P3+FsgcMGumvgaTE4pMz2QwhQodc9huibk/YCwYHUnBqC4kGVM0W+HPYc9rbRpc7MItzp7J+C8U2RkIAgceyva60FFqL7R6ZrruSOmjsyK2QREL0CCZzGa+ti0BIzCOk6bWyv98XVWIzSXXBGDjWZBfjGPOjEo+cEUj7N1Hb6uZQmF4FO+drmzdIj9jRYRBC2m0JItXVxXjLCgeQkcWvTIJN3xMOwu0I6xbkwQ6n6RrLobSuWCcoTgqMPJ7GYXc=
