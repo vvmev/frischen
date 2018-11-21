@@ -14,6 +14,7 @@ pyyaml = "*"
 coverage = "==4.4.*"
 coveralls = "*"
 sphinx = "*"
+sphinx-rtd-theme = "*"
 
 [requires]
 python_version = "3.7"

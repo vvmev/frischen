@@ -14,7 +14,8 @@ help:
 .PHONY: help Makefile apidoc
 
 apidoc:
-	@sphinx-apidoc -o python --separate --module-first ../frischen \
+	@sphinx-apidoc -o python --separate --module-first \
+		../frischen \
 		../frischen/test_*
 
 # Catch-all target: route all unknown targets to Sphinx using the new
