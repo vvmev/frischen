@@ -1,7 +1,8 @@
 __pycache__
 /_build/
 /.coverage
+/.idea
+/build
 /coverage
 /*.gv
 /*.gv.pdf
-/.idea

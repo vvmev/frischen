@@ -1,3 +1,33 @@
+"""
+A Spurplan-Drucktasten Lorenz 20 (SpDrL20) signal tower.
+
+The :py:class:`Tower` implements the tower itself, while the
+:py:class:`Element` and derived classes implement the control elements of
+the tower.
+
+These elements can be added to the tower:
+
+* :py:class:`BlockEnd`
+* :py:class:`BlockStart`
+* :py:class:`Counter`
+* :py:class:`DistantSignal`
+* :py:class:`OuterButton`
+* :py:class:`Route`
+* :py:class:`Signal`
+* :py:class:`Track`
+
+
+Example
+^^^^^^^
+
+The following code sets up a tower with some elements.
+
+    tower = Tower('a_tower')
+    Turnout(tower, 'W1')
+    Signal(tower, 'A'
+    DistantSignal(tower, 'a', 'A')
+
+"""
 import asyncio
 import logging
 
@@ -11,12 +41,25 @@ logger = logging.getLogger(__name__)
 
 
 def to_bool(v):
-    """Returns True if value represents a true-ish value."""
+    """Returns :py:const:`True` if value is ``True``, or any string value
+    representing true, such as ``y`` or ``true``.
+
+    :param v: an object to be evaluated
+    :returns: boolean
+    """
     return v in [1, True, '1', 't', 'T', 'true', 'True', 'y', 'yes']
 
 
 def array_to_str(ary):
-    """Return a string representing the array."""
+    """Return a string representing the array.
+
+    Each of the arrays values are joined by a comma ``,``. Each value is
+    converted to a string, with ``bool`` values converted to ``0`` and ``1``,
+    respectively.
+
+    :param ary: The array to be converted
+    :returns: The string
+    """
     r = []
     for i in ary:
         if isinstance(i, bool):
@@ -32,7 +75,13 @@ class PubSubTopic():
         self.subscribers = []
 
     def subscribe(self, name, fn):
-        """Register callback to be called when publish() is called."""
+        """Register callback to be called when publish() is called.
+
+        :param name: A name for this callback; used only for debugging and
+            logging.
+        :param fn: The callback function to be called on
+            :py:func:`PubSubTopic.publish`.
+        """
         self.subscribers.append((name, fn))
 
     def publish(self, *args, **kwargs):
@@ -51,13 +100,23 @@ class MQTTDispatcher():
         self.connected = True
 
     def subscribe(self, topic, name, fn):
-        """Subscribe a callback function to a topic."""
+        """Subscribe a callback function to a topic.
+
+        :param name: A name for this callback; used only for debugging and
+            logging.
+        :param fn: The callback function to be called on
+            :py:func:`PubSubTopic.publish`.
+        """
         if topic not in self.subscribers:
             self.subscribers[topic] = PubSubTopic()
         self.subscribers[topic].subscribe(name, fn)
 
     def dispatch_one(self, topic, value):
-        """Dispatch one message to all subscribers."""
+        """Dispatch one message to all subscribers.
+
+        :param topic: the message topic
+        :param value: the message content
+        """
         if topic in self.subscribers:
             self.subscribers[topic].publish(topic, value)
 
@@ -86,6 +145,16 @@ class ElementManager():
         return self.objects.values()
 
     def get(self, name):
+        """Return element by name.
+
+        As a convenience, the object being retrieved can be specified by name
+        or by the object itself. When passing in the object, ``None`` will be
+        returned if the object is not part of this manager.
+
+        :param name: the name of an object in this manager, or the object
+            itself.
+        :return: The object or ``None``.
+        """
         if isinstance(name, str):
             return self.objects.get(name)
         if name in self.objects.values():
@@ -93,10 +162,16 @@ class ElementManager():
         return None
 
     def entries(self):
+        """Returns the dict of all objects.
+
+        :return: dict of all objects
+        """
         return self.objects
 
     def register(self, element):
-        """Register an element with this manager."""
+        """Register an element with this manager.
+
+        :param element: The element to be registered."""
         self.objects[element.name] = element
 
     def reset_all(self):
@@ -112,6 +187,7 @@ class ElementManager():
         Remove element from the manager.
 
         The element to be removed can be specified by the object or its name.
+        :param element: the element to be unregistered.
         """
         if element in self.objects:
             del self.objects[element]
@@ -129,8 +205,14 @@ class Element():
     """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        """
         self.kind = self.__class__.__name__.lower()
         self.name = name
         self.objects.register(self)
@@ -143,26 +225,53 @@ class Element():
         self.tower.dispatcher.subscribe(self.tower.trackside_topic('track', name), str(self), self.on_occupied)
 
     def __repr__(self):
+        """Returns a string representation of this object."""
         return f'{self.__class__.__name__}<{self.name}>'
 
     def on_button(self, topic, value):
+        """The signalman has pushed the button.
+
+        This callback is invoked when the `name` panel topic receives a
+        message.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         self.pushed = to_bool(value)
 
     def on_occupied(self, topic, value):
+        """The track occupied status has changed.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         self.update(occupied=to_bool(value))
 
     def publish(self):
+        """Publish this elements state to the panel."""
         self.tower.publish(self.topic(), self.value.encode('utf-8'))
         self.on_update.publish(self.value)
 
     def reset(self):
+        """Reset element to initial state and publish."""
         self.occupied = False
         self.publish()
 
     def topic(self):
+        """Returns the full panel topic for this element.
+
+        :return: topic as string.
+        """
         return self.tower.panel_topic(self.kind, self.name)
 
     def update(self, **kwargs):
+        """Update this elements properties.
+
+        After updating the properties, publish the new state to the panel.
+
+        :param kwargs: you can specify one or more properties as named
+            parameters.
+        """
         for k, v in kwargs.items():
             if k not in self.properties:
                 raise KeyError(f'property "{k}" is not valid for {self.__class__.__name__}')
@@ -179,13 +288,28 @@ class BlockEnd(Element):
     The line block apparatus at the end of line.
 
     This element has two state variables, on top of the general occupied status:
-    * blocked: if True, the block is locked, and no train must enter
-    * clearance_lock: if True, the train has not yet gone past the block signal, and the block cannot be unlocked.
+
+    * ``blocked``: if True, the block is locked, and no train must enter.
+    * ``clearance_lock``: if True, the train has not yet gone past the block
+        signal, and the block cannot be unlocked.
+
     """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name, blockstart_topic, clearance_lock_release_topic):
+        """Create BlockEnd element.
+
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        :param blockstart_topic: The trackside topic this element subscribes to
+            to learn of the block being locked.
+        :param clearance_lock_release_topic: The trackside topic for the rail
+            contact or other mechanism that unlocks the clearance lock after
+            the train has left the block.
+        """
         super().__init__(tower, name)
         self.properties += ('blocked', 'clearance_lock')
         self.blocked = False
@@ -198,25 +322,49 @@ class BlockEnd(Element):
         self.tower.dispatcher.subscribe(blockstart_topic, str(self), self.on_block_start)
 
     def on_block_start(self, topic, value):
-        """The start of the line has locked the block."""
+        """The start of the line has locked the block.
+
+        This callback is invoked when ``blockstart_topic`` receives a
+        message.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         value = to_bool(value)
         if value:
             self.update(blocked=True)
 
     def on_button(self, topic, value):
-        """The signalman has pushed the button."""
+        """The signalman has pushed the button.
+
+        This callback is invoked when the `name` panel topic receives a
+        message.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         super().on_button(topic, value)
         if self.pushed and self.tower.is_outer_button('BlGT') \
                 and not self.clearance_lock:
             self.update(blocked=False, clearance_lock=True)
 
     def on_clearance_lock_release(self, topic, value):
-        """If the track segment has transitioned from occupied to unoccupied, the clearance lock is unlocked."""
+        """Track has been cleared.
+
+        If the track segment has transitioned from occupied to unoccupied, the
+        clearance lock is unlocked. This callback is invoked when the
+        `clearance_lock_release_topic` trackside topic receives a
+        message.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         value = to_bool(value)
         if not value and self.clearance_lock:
             self.update(clearance_lock=False)
 
     def reset(self):
+        """Reset element to initial state and publish."""
         self.blocked = False
         self.clearance_lock = True
         super().reset()
@@ -225,12 +373,26 @@ class BlockEnd(Element):
 class BlockStart(Element):
     """The line block apparatus at the beginning of the line.
 
-    The block is locked when the train occupies this track segment, and unlocked when the remote block end unlocks it.
+    The block is locked when the train occupies this track segment, and
+    unlocked when the remote blockend unlocks it.
     """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name, blockend_topic, blocking_track_topic):
+        """
+
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        :param blockend_topic: The trackside topic this element publishes to
+            to inform the blockend about the block being locked,
+            and subscribes to to learn about the remote blockend unlocking
+            the block.
+        :param blocking_track_topic: The trackside topic for the rail
+            contact or other mechanism that locks the block.
+        """
         super().__init__(tower, name)
         self.properties += ('blocked',)
         self.blocked = False
@@ -242,26 +404,43 @@ class BlockStart(Element):
         self.tower.dispatcher.subscribe(blocking_track_topic, str(self), self.on_blocking_track)
 
     def on_blockend(self, topic, value):
-        """Block apparatus at the end of the block has been unblocked."""
+        """Block apparatus at the end of the block has been unblocked.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         if not to_bool(value):
             self.update(blocked=False)
 
     def on_blocking_track(self, topic, value):
-        """Track at the beginning of the block has been occupied and clear again."""
+        """Track at the beginning of the block has been cleared again.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         if not to_bool(value):
             self.update(blocked=True)
+            # TODO: publish block locked
 
     def reset(self):
+        """Reset element to initial state and publish."""
         self.blocked = False
         super().reset()
 
 
 class Counter(Element):
-    """Counts relevant operations on the panel."""
+    """Counts substitute procedure operations on the panel."""
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name, button=None):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        :param button: The :py:class:`Button` this counter is attached to.
+        """
         super().__init__(tower, name)
         self.count = 0
         self.properties = ['count']
@@ -277,25 +456,67 @@ class Counter(Element):
         self.publish()
 
     def reset(self):
+        """Reset element to initial state and publish."""
         self.count = 0
         super().reset()
 
 
 class DistantSignal(Element):
-    """Controls the distant signal based on the aspect of one or more home signals.
+    """A distant signal.
 
-    Since the distant signal can indicate the aspect of different home signals, based on the position of one or more
-    turnouts, a some logic is implemented to be able to configure these conditions.
+    The distant signal shows an aspect that indicates to the drive the aspect
+    of the respective home signal, so the driver can break in time to come to a
+    full stop in fron of the home siganl if necessary.
 
-    Additionally, if the distant signal is mounted to the same mast as a home signal, the distant signal will be
-    switched off if the home signal is showing a stop aspect.
+    Since the distant signal can indicate the aspect of different home signals,
+    based on the position of one or more turnouts, some logic is implemented to
+    be able to configure these conditions.
+
+    Additionally, if the distant signal is mounted to the same mast as another
+    home signal, the distant signal will be switched off if the home signal is
+    showing a stop aspect.
+
+    1. Single home signal
+
+    If there are no turnouts between this distant signal and its home signal,
+    this distant signal simply shows the respective aspect for its home signal.
+
+    Example:
+        >>> DistantSignal(tower, 'a', 'A')
+
+    2. Multiple home signals
+
+    If is a turnout between this distant signal and a home signal,
+    this distant signal shows the respective aspect of one of these
+    home signals based on the position of the intervening switches.  To
+    properly describe this setup, you need to pass a dict with the name of the
+    switch, and a sub-array of the two home signals.
+
+    For example:
+        >>> DistantSignal(tower, 'p1p2', { 'W5', [ 'P1', 'P2' ]})
+
+    In this example, the distant signal ``p1p2`` will show the respective
+    aspect for the home signal ``P1`` if the turnout ``W5`` is in the
+    straight position, and will show the aspect of ``P2``  if ``W5`` is set to
+    diverging.
     """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     translated_aspects = { 'Hp0': 'Vr0', 'Hp1': 'Vr1', 'Hp2': 'Vr2' }
 
     def __init__(self, tower, name, home, mounted_at=None):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        :param home: A string or dict describing which home signal this
+            distant signal shows its aspects for.
+        :param mounted_at: A string or :py:class:`Signal` home signal object.
+            If specified, this distant signal is mounted on the same mast as
+            the home signal.
+        """
         super().__init__(tower, name)
         self.mounted_at = None
         self.aspect = 'Vr0'
@@ -320,29 +541,60 @@ class DistantSignal(Element):
                 self.start_distant(aspect) if turnout.position==1 else False)
 
     def topic(self):
+        """Returns the full panel topic for this element.
+
+        :return: topic as string.
+        """
         return self.tower.panel_topic('signal', self.name)
 
     def publish(self):
+        """Publishes this signals aspect to the panel."""
         if self.mounted_at is not None and self.mounted_at.value == 'Hp0':
             self.tower.publish(self.topic(), '-'.encode('utf-8'))
         else:
             super().publish()
 
     def start_distant(self, aspect):
+        """Used by the callbacks to set this signals aspect."""
         if aspect in self.translated_aspects:
             aspect = self.translated_aspects[aspect]
         self.update(aspect=aspect)
 
     def mounted_at_changed(self, aspect):
+        """Callback called when the home signal on the same mask changes."""
         self.publish()
 
 
 class Signal(Element):
-    """Controls a home signal."""
+    """Controls a signal.
+
+    A  signal can consist of multiple backgrounds added to its mast. Use these
+    methods to add the respective signal backgrounds:
+
+    * :py:meth:`Signal.add_alt` adds an alternate signal background (Zs1)
+    * :py:meth:`Signal.add_home` adds the home signal background (Hp0, Hp1, Hp2)
+    * :py:meth:`Signal.add_shunting` adds the shunting background (Sh1)
+
+    The ``add_*`` methods return the object itself, allowing the use of the
+    builder pattern:
+    >>> s1 = Signal(tower, 'A').add_alt().add_home()
+
+    Note that a distant signal mounted to the same mast as a home signal is
+    created by adding a :py:class:`DistantSignal` and setting it's
+    ``mounted_on`` property to the home signal.
+
+    :ivar alt_timeout: time in seconds the alternate aspect will be shown.
+    """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        """
         super().__init__(tower, name)
         self.alt_delay = 15
         self.aspect = 'Hp0'
@@ -350,6 +602,26 @@ class Signal(Element):
         self.aspects = []
 
     def on_button(self, topic, value):
+        """The signalman has pushed the button.
+
+        This callback is invoked when the `name` panel topic receives a
+        message.
+
+        For a signal, pushing the button will only cause an action when
+        pushed together with another.
+
+        * When pushed together with another signal button, and a route has
+            been defined for this pair, try to lock that route.
+        * When pushed together with the ``SGT`` outer button, try to set the
+            signal to the shunting aspect (Sh1).
+        * When pushed together with the ``ErsGT`` outer button, try to set
+            the signal to the alternate aspect (Zs1).
+        * When pushed together with the ``HaGT`` outer button, set the signal
+            aspect to stop (Hp0).
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         super().on_button(topic, value)
         if self.pushed:
             if self.tower.is_outer_button('SGT'):
@@ -379,18 +651,29 @@ class Signal(Element):
                     route.start()
 
     def add_alt(self):
+        """Add an alternate signal background to this signal.
+
+        :return: self
+        """
         self.aspects += ['Zs1']
         return self
 
     def add_home(self):
+        """Add a home background to this signal."""
         self.aspects += ['Hp0', 'Hp1', 'Hp2']
         return self
 
     def add_shunting(self):
+        """Add a shunting background to this signal."""
         self.aspects += ['Sh1']
         return self
 
     def start_alt(self):
+        """Start the change to the alt aspect (Zs1).
+
+        The alternate aspect will extinguish after
+        :py:attr:`Signal.alt_timeout`.
+        """
         if 'Zs1' in self.aspects and self.aspect == 'Hp0':
             if self.task:
                 self.task.cancel()
@@ -400,22 +683,26 @@ class Signal(Element):
             logger.debug(f'Not activating Zs1: {self.value}')
 
     async def change_alt(self):
+        """Change to alt aspect, then return to stop aspect."""
         self.update(aspect='Zs1')
         await asyncio.sleep(self.alt_delay)
         self.update(aspect='Hp0')
 
     def start_halt(self):
+        """Change to stop aspect."""
         if self.task:
             self.task.cancel()
         if self.aspect != 'Hp0':
             self.update(aspect='Hp0')
 
     def start_change_shunting(self):
+        """Change to shunting aspect."""
         if 'Sh1' in self.aspects:
             if self.aspect == 'Hp0':
                 self.update(aspect='Sh1')
 
     def start_home(self, aspect):
+        """Change (home) aspect of this signal."""
         self.update(aspect=aspect)
 
 
@@ -423,19 +710,38 @@ class Track(Element):
     """Manages a segment of track."""
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        """
         super().__init__(tower, name)
         self.locked = False
         self.properties += ['locked']
 
 
 class Turnout(Element):
-    """Manages a turnout."""
+    """Manages a turnout.
+
+    :ivar position: ``True`` if the turnout it set to diverging.
+    :ivar moving: ``True`` if the turnout is moving to a new position.
+    :ivar locked: ``True`` if the turnout is locked (typically by a
+        :py:class:`Route`).
+    :ivar blocked: ``True`` if the turnout has been locked individually.
+    """
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        """
         super().__init__(tower, name)
         self.position = False
         self.moving = False
@@ -446,6 +752,7 @@ class Turnout(Element):
         self.task = None
 
     def reset(self):
+        """Reset element to initial state and publish."""
         self.position = False
         self.moving = False
         self.locked = False
@@ -453,6 +760,14 @@ class Turnout(Element):
         super().reset()
 
     def on_button(self, topic, value):
+        """The signalman has pushed the button.
+
+        This callback is invoked when the `name` panel topic receives a
+        message.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         super().on_button(topic, value)
         if self.pushed and self.tower.is_outer_button('WGT') \
                 and not self.locked and not self.blocked \
@@ -460,6 +775,11 @@ class Turnout(Element):
             self.start_change()
 
     def start_change(self, position=None):
+        """Switch turnout to new position.
+
+        :param position: If specified, move turnout to this position,
+            If unspecified, move the turnout to the other position.
+        """
         if position is None:
             position = not self.position
         if self.task:
@@ -468,11 +788,14 @@ class Turnout(Element):
         return self.task
 
     async def change(self, position):
+        """Start the motion and wait for it to complete."""
         if position == self.position:
             return
         self.position = position
         self.update(moving=True)
 
+        # TODO: instead of this timeout, we need to wait for the trackside
+        # element to confirm reaching the final position.
         await asyncio.sleep(self.moving_delay)
         self.update(moving=False)
 
@@ -481,8 +804,18 @@ class OuterButton(Element):
     """Records an outer button."""
 
     objects = ElementManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, name):
+        """The signalman has pushed the button.
+
+        This callback is invoked when the `name` panel topic receives a
+        message.
+
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param name: The name of this element; also used as the topic for the
+            panel.
+        """
         super().__init__(tower, name)
         self.properties = []
         self.counter = None
@@ -498,15 +831,22 @@ class OuterButton(Element):
             self.counter.increment()
 
     def publish(self):
-        """No state to publish."""
+        """No-op method.
+
+        There is no state to publish to the panel."""
         pass
 
     def update(self, **kwargs):
-        """No state to update."""
-        raise KeyError(f'{self.__class__.__name__} has no updateable properties')
+        """No-op method.
+
+        There is no state to change."""
+        raise KeyError(f'{self.__class__.__name__} has no updatable properties')
 
 
 class RouteManager(ElementManager):
+    """
+    An object manager for :py:class:`Route` objects.
+    """
     def find_by_signals(self, signals):
         r = self.objects.get(f'{signals[0].name},{signals[1].name}')
         if not r:
@@ -521,8 +861,16 @@ class Route():
     """
 
     objects = RouteManager()
+    """The object manager for these elements. See :py:class:`ElementManager`."""
 
     def __init__(self, tower, s1, s2, release_topic):
+        """
+        :param tower: The :py:class:`Tower` this element is part of.
+        :param s1: The signal at the start of the route.
+        :param s2: The signal at the end of the route.
+        :param release_topic: The trackside topic the route subscribes to to
+            release the route.
+        """
         self.s1 = Signal.objects.get(s1)
         self.s2 = Signal.objects.get(s2)
         self.name = f'{self.s1.name},{self.s2.name}'
@@ -538,38 +886,80 @@ class Route():
         self.tower.dispatcher.subscribe(release_topic, str(self), self.on_release)
 
     def __repr__(self):
+        """Returns a string representation of this object."""
         return f'{self.__class__.__name__}<{self.name}>'
 
     def reset(self):
+        """Reset element to initial state and publish."""
         pass
 
     def add_turnout(self, turnout, position):
+        """Add a turnout to the route.
+
+        :param turnout: The turnout to be added.
+        :param position: The position the turnout needs to be in for the
+            route to be locked.
+        :return: self
+        """
         turnout = Turnout.objects.get(turnout)
         self.turnouts.append((turnout, position))
         self.tracks.append(turnout)
         return self
 
     def add_flank_protection(self, turnout, position):
+        """Add a turnout as flank protection.
+
+        :param turnout: The turnout to be added.
+        :param position: The position the turnout needs to be in for the
+            route to be locked.
+        :return: self
+        """
         turnout = Turnout.objects.get(turnout)
         self.flankProtections.append((turnout, position))
         return self
 
     def add_track(self, track):
+        """Add a track.
+
+        :param track: The track to be added
+        :return: self
+        """
         track = Track.objects.get(track)
         self.tracks.append(track)
         return self
 
     def on_release(self, topic, value):
-        """If the track segment has transitioned from occupied to unoccupied, the clearance lock is unlocked."""
+        """Callback for unlocking the route.
+
+        :param topic: The topic the message was received under.
+        :param value: The contents of the message.
+        """
         value = to_bool(value)
         if not value:
             self.unlock()
 
     def start(self):
+        """Start locking the route."""
         logger.debug(f'started: {self}')
         return asyncio.create_task(self.change())
 
     async def change(self):
+        """Check and lock route.
+
+        This is the most involved process the tower can perform:
+
+        1. Check that all turnouts are unlocked and unoccupied.
+
+        2. Move all turnouts to their correct positions.
+
+        3. Lock all turnouts.
+
+        4. Check that all tracks are unoccupied.
+
+        5. Lock all tracks.
+
+        6. Set start signal to go aspect.
+        """
         tasks = []
         for (turnout, position) in self.turnouts + self.flankProtections:
             if turnout.locked:
@@ -600,6 +990,10 @@ class Route():
         self.locked = True
 
     def unlock(self):
+        """Unlock the route.
+
+        If the route is locked, remove locks from turnouts and tracks.
+        """
         self.s1.start_home('Hp0')
         for (turnout, position) in self.turnouts + self.flankProtections:
             turnout.update(locked=0)
@@ -609,7 +1003,25 @@ class Route():
 
 
 class Tower():
+    """Control logic for a Lorenz 20 signal tower.
+
+    Together with the elements in this module, this class implements the control
+    logic. It connects to an operators panel and to trackside equipment
+    through MQTT.
+
+    Example:
+        >>> tower = Tower('a_station')
+        >>> Signal(tower, 'p1p3')
+        ... add more elements...
+        >>> asyncio.run(tower.run())
+
+    """
     def __init__(self, name, client=None):
+        """Set up a new tower.
+
+        :param name: name of tower/station
+        :param client: (optional) an existing MQTTClient.
+        """
         if client is None:
             self.client = MQTTClient()
         else:

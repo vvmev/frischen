@@ -12,8 +12,8 @@ pyyaml = "*"
 
 [dev-packages]
 coverage = "==4.4.*"
-sphinx = "*"
 coveralls = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.7"
