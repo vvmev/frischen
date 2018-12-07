@@ -401,16 +401,16 @@ var SpDrL20Panel = (function() {
       this.panel.client.subscribe('turnout', indicator, (k, v) => {
         [this.occupied, this.position, this.moving, this.locked, this.blocked] = stringToBooleanArray(v)
         console.log("turnout " + k + " position " + this.position + ", moving " + this.moving)
+        if (!this.moving && this.blinker !== undefined) {
+          this.panel.removeBlinker(this.blinker)
+          this.blinker = undefined
+        }
         if (this.position) {
           this.active = leg1.addClass('frischen-switch-position')
           leg2.removeClass('frischen-switch-position')
         } else {
           leg1.removeClass('frischen-switch-position')
           this.active = leg2.addClass('frischen-switch-position')
-        }
-        if (this.blinker !== undefined) {
-          this.panel.removeBlinker(this.blinker)
-          this.blinker = undefined
         }
         if (this.moving) {
           this.blinker = this.panel.addBlinker([this.active], 'frischen-switch-position')
