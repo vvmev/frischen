@@ -1,0 +1,63 @@
+<html>
+
+<head>
+  <title>E-Tal tracks</title>
+  <script src="../libs/mqttws31.min.js" type="text/javascript"></script>
+  <script src="../libs/jquery-3.4.1.js"></script>
+  <script src="../libs/mqttbuttons.js"></script>
+  <link rel="stylesheet" href="../libs/spdrl20.css">
+</head>
+
+<body>
+  <div id="buttons">
+    <p>
+    <span class="mqtt-label">Track 1:</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/1-1">1</label>
+    <span class="mqtt-label">&nbsp;</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W1">W1</label>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/1-4">4</label>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W13">W13</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/1-6">6</label>
+    </p>
+    <p>
+    <span class="mqtt-label">Track 2:</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-1">1</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-2">2</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W2">W2</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-3">3</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W3">W3</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-4">4</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W11">W11</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-5">5</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W12">W12</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/2-6">6</label>
+    </p>
+    <p>
+    <span class="mqtt-label">Track 3:</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W4">W4</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/3-1">4</label>
+    <label><input type="checkbox" class="mqtt-toggle" name="frischen/etal/trackside/track/W10">W10</label>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    <span class="mqtt-label">&nbsp;</span>
+    </p>
+    <p><span class="mqtt-label">Block D:</span>
+      <button class="mqtt-button" name="frischen/etal/trackside/block/d-e" value="1">Start</button>
+      <button class="mqtt-button" name="frischen/etal/trackside/block/e-b" value="0">End</button>
+    <p/>
+    <p><span class="mqtt-label">Block M:</span>
+      <button class="mqtt-button" name="frischen/etal/trackside/block/m-e" value="1">Start</button>
+      <button class="mqtt-button" name="frischen/etal/trackside/block/e-m" value="0">End</button>
+    <p/>
+  </div>
+</body>
+
+</html>
