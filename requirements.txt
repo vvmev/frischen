@@ -1,22 +1,11 @@
-################################################################################
-# This requirements file has been automatically generated from `Pipfile` with
-# `pipenv-to-requirements`
-#
-#
-# This has been done to maintain backward compatibility with tools and services
-# that do not support `Pipfile` yet.
-#
-# Do NOT edit it directly, use `pipenv install [-d]` to modify `Pipfile` and
-# `Pipfile.lock` and then regenerate `requirements*.txt`.
-################################################################################
-
+-i https://pypi.org/simple/
 colored==1.3.93
 docopt==0.6.2
 graphviz==0.10.1
 hbmqtt==0.9.5
 paho-mqtt==1.4.0
-passlib==1.7.1
+passlib==1.7.4
 pyyaml==3.13
-six==1.11.0
-transitions==0.6.9
-websockets==7.0
+six==1.15.0
+transitions==0.8.7
+websockets==8.1
