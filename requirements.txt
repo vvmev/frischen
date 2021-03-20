@@ -10,13 +10,8 @@
 # `Pipfile.lock` and then regenerate `requirements*.txt`.
 ################################################################################
 
-colored==1.3.93
-docopt==0.6.2
-graphviz==0.10.1
-hbmqtt==0.9.5
-paho-mqtt==1.4.0
-passlib==1.7.1
-pyyaml==3.13
-six==1.11.0
-transitions==0.6.9
-websockets==7.0
+colored
+graphviz
+hbmqtt
+paho-mqtt
+pyyaml
