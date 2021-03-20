@@ -5,7 +5,7 @@ graphviz==0.10.1
 hbmqtt==0.9.5
 paho-mqtt==1.4.0
 passlib==1.7.4
-pyyaml==3.13
+pyyaml==5.1
 six==1.15.0
 transitions==0.8.7
 websockets==8.1
