@@ -16,6 +16,7 @@ coveralls = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 pipenv-to-requirements = "*"
+jasmine = "*"
 
 [requires]
 python_version = "3.7"

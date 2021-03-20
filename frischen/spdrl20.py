@@ -26,7 +26,7 @@ The following code sets up a tower with some elements.
 
     tower = Tower('a_tower')
     Turnout(tower, 'W1')
-    Signal(tower, 'A'
+    Signal(tower, 'A')
     DistantSignal(tower, 'a', 'A')
 
 """
