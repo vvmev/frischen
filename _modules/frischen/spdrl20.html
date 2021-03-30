@@ -1,0 +1,1291 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>frischen.spdrl20 &mdash; Frischen  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Frischen
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../developing.html">Developing Frischen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mqtt.html">Frischens Use of MQTT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/modules.html">frischen</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Frischen</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../frischen.html">frischen</a> &raquo;</li>
+        
+      <li>frischen.spdrl20</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for frischen.spdrl20</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Spurplan-Drucktasten Lorenz 20 (SpDrL20) signal tower.</span>
+
+<span class="sd">The :py:class:`Tower` implements the tower itself, while the</span>
+<span class="sd">:py:class:`Element` and derived classes implement the control elements of</span>
+<span class="sd">the tower.</span>
+
+<span class="sd">These elements can be added to the tower:</span>
+
+<span class="sd">* :py:class:`BlockEnd`</span>
+<span class="sd">* :py:class:`BlockStart`</span>
+<span class="sd">* :py:class:`Counter`</span>
+<span class="sd">* :py:class:`DistantSignal`</span>
+<span class="sd">* :py:class:`OuterButton`</span>
+<span class="sd">* :py:class:`Route`</span>
+<span class="sd">* :py:class:`Signal`</span>
+<span class="sd">* :py:class:`Track`</span>
+
+
+<span class="sd">Example</span>
+<span class="sd">^^^^^^^</span>
+
+<span class="sd">The following code sets up a tower with some elements.</span>
+
+<span class="sd">.. code-block:: Python</span>
+
+<span class="sd">    tower = Tower(&#39;a_tower&#39;)</span>
+<span class="sd">    Turnout(tower, &#39;W1&#39;)</span>
+<span class="sd">    Signal(tower, &#39;A&#39;)</span>
+<span class="sd">    DistantSignal(tower, &#39;a&#39;, &#39;A&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">isclass</span>
+
+<span class="kn">from</span> <span class="nn">hbmqtt.client</span> <span class="kn">import</span> <span class="n">MQTTClient</span><span class="p">,</span> <span class="n">ClientException</span>
+<span class="kn">from</span> <span class="nn">hbmqtt.mqtt.constants</span> <span class="kn">import</span> <span class="n">QOS_2</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="to_bool"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.to_bool">[docs]</a><span class="k">def</span> <span class="nf">to_bool</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns :py:const:`True` if value is ``True``, or any string value</span>
+<span class="sd">    representing true, such as ``y`` or ``true``.</span>
+
+<span class="sd">    :param v: an object to be evaluated</span>
+<span class="sd">    :returns: boolean</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;true&#39;</span><span class="p">,</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;yes&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="array_to_str"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.array_to_str">[docs]</a><span class="k">def</span> <span class="nf">array_to_str</span><span class="p">(</span><span class="n">ary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a string representing the array.</span>
+
+<span class="sd">    Each of the arrays values are joined by a comma ``,``. Each value is</span>
+<span class="sd">    converted to a string, with ``bool`` values converted to ``0`` and ``1``,</span>
+<span class="sd">    respectively.</span>
+
+<span class="sd">    :param ary: The array to be converted</span>
+<span class="sd">    :returns: The string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ary</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:b}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PubSubTopic"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.PubSubTopic">[docs]</a><span class="k">class</span> <span class="nc">PubSubTopic</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A simple way for one object to notify others.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PubSubTopic.subscribe"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.PubSubTopic.subscribe">[docs]</a>    <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register callback to be called when publish() is called.</span>
+
+<span class="sd">        :param name: A name for this callback; used only for debugging and</span>
+<span class="sd">            logging.</span>
+<span class="sd">        :param fn: The callback function to be called on</span>
+<span class="sd">            :py:func:`PubSubTopic.publish`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">fn</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PubSubTopic.publish"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.PubSubTopic.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Call all registered subscribers.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">fn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;post </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MQTTDispatcher"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.MQTTDispatcher">[docs]</a><span class="k">class</span> <span class="nc">MQTTDispatcher</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Subscribe to one or more MQTT topics, and call the registered callbacks with the messages received.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="MQTTDispatcher.subscribe"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.MQTTDispatcher.subscribe">[docs]</a>    <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subscribe a callback function to a topic.</span>
+
+<span class="sd">        :param name: A name for this callback; used only for debugging and</span>
+<span class="sd">            logging.</span>
+<span class="sd">        :param fn: The callback function to be called on</span>
+<span class="sd">            :py:func:`PubSubTopic.publish`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">topic</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span> <span class="o">=</span> <span class="n">PubSubTopic</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MQTTDispatcher.dispatch_one"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.MQTTDispatcher.dispatch_one">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dispatch one message to all subscribers.</span>
+
+<span class="sd">        :param topic: the message topic</span>
+<span class="sd">        :param value: the message content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">topic</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MQTTDispatcher.dispatch"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.MQTTDispatcher.dispatch">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receive and dispatch messages until told to stop.&quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">([(</span><span class="n">t</span><span class="p">,</span> <span class="n">QOS_2</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">deliver_message</span><span class="p">()</span>
+            <span class="n">packet</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">publish_packet</span>
+            <span class="n">topic</span> <span class="o">=</span> <span class="n">packet</span><span class="o">.</span><span class="n">variable_header</span><span class="o">.</span><span class="n">topic_name</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">packet</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dispatch_one</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subscribers</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div></div>
+
+
+<div class="viewcode-block" id="ElementManager"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager">[docs]</a><span class="k">class</span> <span class="nc">ElementManager</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Manage the collection of elements created from a class.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="ElementManager.all"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.all">[docs]</a>    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all registered elements.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElementManager.get"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return element by name.</span>
+
+<span class="sd">        As a convenience, the object being retrieved can be specified by name</span>
+<span class="sd">        or by the object itself. When passing in the object, ``None`` will be</span>
+<span class="sd">        returned if the object is not part of this manager.</span>
+
+<span class="sd">        :param name: the name of an object in this manager, or the object</span>
+<span class="sd">            itself.</span>
+<span class="sd">        :return: The object or ``None``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">name</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ElementManager.entries"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.entries">[docs]</a>    <span class="k">def</span> <span class="nf">entries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict of all objects.</span>
+
+<span class="sd">        :return: dict of all objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span></div>
+
+<div class="viewcode-block" id="ElementManager.register"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register an element with this manager.</span>
+
+<span class="sd">        :param element: The element to be registered.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">element</span></div>
+
+<div class="viewcode-block" id="ElementManager.reset_all"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.reset_all">[docs]</a>    <span class="k">def</span> <span class="nf">reset_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bring all objects to a defined state.</span>
+
+<span class="sd">        By calling each element&#39;s reset() method, all properties are reset, and the element&#39;s state is published.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElementManager.unregister"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.ElementManager.unregister">[docs]</a>    <span class="k">def</span> <span class="nf">unregister</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove element from the manager.</span>
+
+<span class="sd">        The element to be removed can be specified by the object or its name.</span>
+<span class="sd">        :param element: the element to be unregistered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">element</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">name</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="Element"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element">[docs]</a><span class="k">class</span> <span class="nc">Element</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;The base class for elements of the signal tower.</span>
+
+<span class="sd">    There is one state variable, occupied, which shows whether the track represented by this element is currently</span>
+<span class="sd">    occupied by a train.</span>
+
+<span class="sd">    This is an abstract base class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span> <span class="o">=</span> <span class="n">tower</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pushed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;occupied&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_update</span> <span class="o">=</span> <span class="n">PubSubTopic</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">panel_topic</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;track&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_occupied</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a string representation of this object.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&gt;&#39;</span>
+
+<div class="viewcode-block" id="Element.on_button"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.on_button">[docs]</a>    <span class="k">def</span> <span class="nf">on_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The signalman has pushed the button.</span>
+
+<span class="sd">        This callback is invoked when the `name` panel topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pushed</span> <span class="o">=</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Element.on_occupied"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.on_occupied">[docs]</a>    <span class="k">def</span> <span class="nf">on_occupied</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The track occupied status has changed.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">occupied</span><span class="o">=</span><span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Element.publish"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Publish this elements state to the panel.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_update</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Element.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">occupied</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Element.topic"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.topic">[docs]</a>    <span class="k">def</span> <span class="nf">topic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the full panel topic for this element.</span>
+
+<span class="sd">        :return: topic as string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">panel_topic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Element.update"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Element.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update this elements properties.</span>
+
+<span class="sd">        After updating the properties, publish the new state to the panel.</span>
+
+<span class="sd">        :param kwargs: you can specify one or more properties as named</span>
+<span class="sd">            parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;property &quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&quot; is not valid for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">array_to_str</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="BlockEnd"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockEnd">[docs]</a><span class="k">class</span> <span class="nc">BlockEnd</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The line block apparatus at the end of line.</span>
+
+<span class="sd">    This element has two state variables, on top of the general occupied status:</span>
+
+<span class="sd">    * ``blocked``: if True, the block is locked, and no train must enter.</span>
+<span class="sd">    * ``clearance_lock``: if True, the train has not yet gone past the block</span>
+<span class="sd">        signal, and the block cannot be unlocked.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">blockstart_topic</span><span class="p">,</span> <span class="n">clearance_lock_release_topic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create BlockEnd element.</span>
+
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        :param blockstart_topic: The trackside topic this element subscribes to</span>
+<span class="sd">            to learn of the block being locked.</span>
+<span class="sd">        :param clearance_lock_release_topic: The trackside topic for the rail</span>
+<span class="sd">            contact or other mechanism that unlocks the clearance lock after</span>
+<span class="sd">            the train has left the block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;blocked&#39;</span><span class="p">,</span> <span class="s1">&#39;clearance_lock&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearance_lock</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">blockstart_topic</span><span class="p">:</span>
+            <span class="n">blockstart_topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">blockstart_topic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">clearance_lock_release_topic</span><span class="p">:</span>
+            <span class="n">clearance_lock_release_topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;track&#39;</span><span class="p">,</span> <span class="n">clearance_lock_release_topic</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">clearance_lock_release_topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_clearance_lock_release</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">blockstart_topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_block_start</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BlockEnd.on_block_start"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockEnd.on_block_start">[docs]</a>    <span class="k">def</span> <span class="nf">on_block_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The start of the line has locked the block.</span>
+
+<span class="sd">        This callback is invoked when ``blockstart_topic`` receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">blocked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BlockEnd.on_button"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockEnd.on_button">[docs]</a>    <span class="k">def</span> <span class="nf">on_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The signalman has pushed the button.</span>
+
+<span class="sd">        This callback is invoked when the `name` panel topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">on_button</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pushed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;BlGT&#39;</span><span class="p">)</span> \
+                <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">clearance_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">blocked</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clearance_lock</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BlockEnd.on_clearance_lock_release"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockEnd.on_clearance_lock_release">[docs]</a>    <span class="k">def</span> <span class="nf">on_clearance_lock_release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Track has been cleared.</span>
+
+<span class="sd">        If the track segment has transitioned from occupied to unoccupied, the</span>
+<span class="sd">        clearance lock is unlocked. This callback is invoked when the</span>
+<span class="sd">        `clearance_lock_release_topic` trackside topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">clearance_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">clearance_lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BlockEnd.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockEnd.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearance_lock</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="BlockStart"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockStart">[docs]</a><span class="k">class</span> <span class="nc">BlockStart</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The line block apparatus at the beginning of the line.</span>
+
+<span class="sd">    The block is locked when the train occupies this track segment, and</span>
+<span class="sd">    unlocked when the remote blockend unlocks it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">blockend_topic</span><span class="p">,</span> <span class="n">blocking_track_topic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        :param blockend_topic: The trackside topic this element publishes to</span>
+<span class="sd">            to inform the blockend about the block being locked,</span>
+<span class="sd">            and subscribes to to learn about the remote blockend unlocking</span>
+<span class="sd">            the block.</span>
+<span class="sd">        :param blocking_track_topic: The trackside topic for the rail</span>
+<span class="sd">            contact or other mechanism that locks the block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;blocked&#39;</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">blockend_topic</span><span class="p">:</span>
+            <span class="n">blockend_topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">blockend_topic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">blocking_track_topic</span><span class="p">:</span>
+            <span class="n">blocking_track_topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;track&#39;</span><span class="p">,</span> <span class="n">blocking_track_topic</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">blockend_topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_blockend</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">blocking_track_topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_blocking_track</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BlockStart.on_blockend"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockStart.on_blockend">[docs]</a>    <span class="k">def</span> <span class="nf">on_blockend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Block apparatus at the end of the block has been unblocked.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">blocked</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BlockStart.on_blocking_track"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockStart.on_blocking_track">[docs]</a>    <span class="k">def</span> <span class="nf">on_blocking_track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Track at the beginning of the block has been cleared again.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">blocked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+            <span class="c1"># TODO: publish block locked</span>
+
+<div class="viewcode-block" id="BlockStart.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.BlockStart.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Counter"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Counter">[docs]</a><span class="k">class</span> <span class="nc">Counter</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Counts substitute procedure operations on the panel.&quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">button</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        :param button: The :py:class:`Button` this counter is attached to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">button</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">button</span> <span class="o">=</span> <span class="n">OuterButton</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">button</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;There is no button </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">button</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="Counter.increment"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Counter.increment">[docs]</a>    <span class="k">def</span> <span class="nf">increment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a substitute procedure operation.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Counter.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Counter.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="DistantSignal"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.DistantSignal">[docs]</a><span class="k">class</span> <span class="nc">DistantSignal</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A distant signal.</span>
+
+<span class="sd">    The distant signal shows an aspect that indicates to the drive the aspect</span>
+<span class="sd">    of the respective home signal, so the driver can break in time to come to a</span>
+<span class="sd">    full stop in fron of the home siganl if necessary.</span>
+
+<span class="sd">    Since the distant signal can indicate the aspect of different home signals,</span>
+<span class="sd">    based on the position of one or more turnouts, some logic is implemented to</span>
+<span class="sd">    be able to configure these conditions.</span>
+
+<span class="sd">    Additionally, if the distant signal is mounted to the same mast as another</span>
+<span class="sd">    home signal, the distant signal will be switched off if the home signal is</span>
+<span class="sd">    showing a stop aspect.</span>
+
+<span class="sd">    1. Single home signal</span>
+
+<span class="sd">    If there are no turnouts between this distant signal and its home signal,</span>
+<span class="sd">    this distant signal simply shows the respective aspect for its home signal.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; DistantSignal(tower, &#39;a&#39;, &#39;A&#39;)</span>
+
+<span class="sd">    2. Multiple home signals</span>
+
+<span class="sd">    If is a turnout between this distant signal and a home signal,</span>
+<span class="sd">    this distant signal shows the respective aspect of one of these</span>
+<span class="sd">    home signals based on the position of the intervening switches.  To</span>
+<span class="sd">    properly describe this setup, you need to pass a dict with the name of the</span>
+<span class="sd">    switch, and a sub-array of the two home signals.</span>
+
+<span class="sd">    For example:</span>
+<span class="sd">        &gt;&gt;&gt; DistantSignal(tower, &#39;p1p2&#39;, { &#39;W5&#39;, [ &#39;P1&#39;, &#39;P2&#39; ]})</span>
+
+<span class="sd">    In this example, the distant signal ``p1p2`` will show the respective</span>
+<span class="sd">    aspect for the home signal ``P1`` if the turnout ``W5`` is in the</span>
+<span class="sd">    straight position, and will show the aspect of ``P2``  if ``W5`` is set to</span>
+<span class="sd">    diverging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="n">translated_aspects</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;Hp0&#39;</span><span class="p">:</span> <span class="s1">&#39;Vr0&#39;</span><span class="p">,</span> <span class="s1">&#39;Hp1&#39;</span><span class="p">:</span> <span class="s1">&#39;Vr1&#39;</span><span class="p">,</span> <span class="s1">&#39;Hp2&#39;</span><span class="p">:</span> <span class="s1">&#39;Vr2&#39;</span> <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">home</span><span class="p">,</span> <span class="n">mounted_at</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        :param home: A string or dict describing which home signal this</span>
+<span class="sd">            distant signal shows its aspects for.</span>
+<span class="sd">        :param mounted_at: A string or :py:class:`Signal` home signal object.</span>
+<span class="sd">            If specified, this distant signal is mounted on the same mast as</span>
+<span class="sd">            the home signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span> <span class="o">=</span> <span class="s1">&#39;Vr0&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mounted_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mounted_at</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at</span><span class="o">.</span><span class="n">on_update</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="s1">&#39;mounted_at&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at_changed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">home</span><span class="p">)</span>
+            <span class="n">signal</span><span class="o">.</span><span class="n">on_update</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">aspect</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_distant</span><span class="p">(</span><span class="n">aspect</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">home</span><span class="p">))</span>
+            <span class="n">turnout</span> <span class="o">=</span> <span class="n">Turnout</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">signals</span> <span class="o">=</span> <span class="p">[</span><span class="n">Signal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">home</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+            <span class="n">signals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">on_update</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="k">lambda</span> <span class="n">aspect</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_distant</span><span class="p">(</span><span class="n">aspect</span><span class="p">)</span> <span class="k">if</span> <span class="n">turnout</span><span class="o">.</span><span class="n">position</span><span class="o">==</span><span class="mi">0</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">signals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">on_update</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="k">lambda</span> <span class="n">aspect</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_distant</span><span class="p">(</span><span class="n">aspect</span><span class="p">)</span> <span class="k">if</span> <span class="n">turnout</span><span class="o">.</span><span class="n">position</span><span class="o">==</span><span class="mi">1</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DistantSignal.topic"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.DistantSignal.topic">[docs]</a>    <span class="k">def</span> <span class="nf">topic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the full panel topic for this element.</span>
+
+<span class="sd">        :return: topic as string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">panel_topic</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DistantSignal.publish"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.DistantSignal.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Publishes this signals aspect to the panel.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mounted_at</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;Hp0&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="p">(),</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DistantSignal.start_distant"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.DistantSignal.start_distant">[docs]</a>    <span class="k">def</span> <span class="nf">start_distant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aspect</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Used by the callbacks to set this signals aspect.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">aspect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">translated_aspects</span><span class="p">:</span>
+            <span class="n">aspect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translated_aspects</span><span class="p">[</span><span class="n">aspect</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="n">aspect</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DistantSignal.mounted_at_changed"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.DistantSignal.mounted_at_changed">[docs]</a>    <span class="k">def</span> <span class="nf">mounted_at_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aspect</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Callback called when the home signal on the same mask changes.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Signal"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal">[docs]</a><span class="k">class</span> <span class="nc">Signal</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Controls a signal.</span>
+
+<span class="sd">    A  signal can consist of multiple backgrounds added to its mast. Use these</span>
+<span class="sd">    methods to add the respective signal backgrounds:</span>
+
+<span class="sd">    * :py:meth:`Signal.add_alt` adds an alternate signal background (Zs1)</span>
+<span class="sd">    * :py:meth:`Signal.add_home` adds the home signal background (Hp0, Hp1, Hp2)</span>
+<span class="sd">    * :py:meth:`Signal.add_shunting` adds the shunting background (Sh1)</span>
+
+<span class="sd">    The ``add_*`` methods return the object itself, allowing the use of the</span>
+<span class="sd">    builder pattern:</span>
+<span class="sd">    &gt;&gt;&gt; s1 = Signal(tower, &#39;A&#39;).add_alt().add_home()</span>
+
+<span class="sd">    Note that a distant signal mounted to the same mast as a home signal is</span>
+<span class="sd">    created by adding a :py:class:`DistantSignal` and setting it&#39;s</span>
+<span class="sd">    ``mounted_on`` property to the home signal.</span>
+
+<span class="sd">    :ivar alt_timeout: time in seconds the alternate aspect will be shown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alt_delay</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span> <span class="o">=</span> <span class="s1">&#39;Hp0&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Signal.on_button"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.on_button">[docs]</a>    <span class="k">def</span> <span class="nf">on_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The signalman has pushed the button.</span>
+
+<span class="sd">        This callback is invoked when the `name` panel topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        For a signal, pushing the button will only cause an action when</span>
+<span class="sd">        pushed together with another.</span>
+
+<span class="sd">        * When pushed together with another signal button, and a route has</span>
+<span class="sd">            been defined for this pair, try to lock that route.</span>
+<span class="sd">        * When pushed together with the ``SGT`` outer button, try to set the</span>
+<span class="sd">            signal to the shunting aspect (Sh1).</span>
+<span class="sd">        * When pushed together with the ``ErsGT`` outer button, try to set</span>
+<span class="sd">            the signal to the alternate aspect (Zs1).</span>
+<span class="sd">        * When pushed together with the ``HaGT`` outer button, set the signal</span>
+<span class="sd">            aspect to stop (Hp0).</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">on_button</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pushed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;SGT&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_change_shunting</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;HaGT&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_halt</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;ErsGT&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_alt</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;FHT&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="n">Route</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">route</span><span class="o">.</span><span class="n">s1</span> <span class="o">==</span> <span class="bp">self</span> <span class="ow">and</span> <span class="n">route</span><span class="o">.</span><span class="n">locked</span><span class="p">:</span>
+                        <span class="n">Counter</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FHT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">increment</span><span class="p">()</span>
+                        <span class="n">route</span><span class="o">.</span><span class="n">unlock</span><span class="p">()</span>
+                        <span class="k">return</span>
+                <span class="k">return</span>
+
+            <span class="n">pushed</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">pushed</span><span class="p">:</span>
+                    <span class="n">pushed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pushed</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">route</span> <span class="o">=</span> <span class="n">Route</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">find_by_signals</span><span class="p">(</span><span class="n">pushed</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">route</span><span class="p">:</span>
+                    <span class="n">route</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Signal.add_alt"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.add_alt">[docs]</a>    <span class="k">def</span> <span class="nf">add_alt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add an alternate signal background to this signal.</span>
+
+<span class="sd">        :return: self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;Zs1&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Signal.add_home"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.add_home">[docs]</a>    <span class="k">def</span> <span class="nf">add_home</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a home background to this signal.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;Hp0&#39;</span><span class="p">,</span> <span class="s1">&#39;Hp1&#39;</span><span class="p">,</span> <span class="s1">&#39;Hp2&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Signal.add_shunting"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.add_shunting">[docs]</a>    <span class="k">def</span> <span class="nf">add_shunting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a shunting background to this signal.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;Sh1&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Signal.start_alt"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.start_alt">[docs]</a>    <span class="k">def</span> <span class="nf">start_alt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start the change to the alt aspect (Zs1).</span>
+
+<span class="sd">        The alternate aspect will extinguish after</span>
+<span class="sd">        :py:attr:`Signal.alt_timeout`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;Zs1&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span> <span class="o">==</span> <span class="s1">&#39;Hp0&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">change_alt</span><span class="p">())</span>
+            <span class="n">Counter</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ErsGT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">increment</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not activating Zs1: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.change_alt"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.change_alt">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">change_alt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change to alt aspect, then return to stop aspect.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;Zs1&#39;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alt_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;Hp0&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.start_halt"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.start_halt">[docs]</a>    <span class="k">def</span> <span class="nf">start_halt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change to stop aspect.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span> <span class="o">!=</span> <span class="s1">&#39;Hp0&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;Hp0&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.start_change_shunting"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.start_change_shunting">[docs]</a>    <span class="k">def</span> <span class="nf">start_change_shunting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change to shunting aspect.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;Sh1&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aspect</span> <span class="o">==</span> <span class="s1">&#39;Hp0&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;Sh1&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.start_home"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Signal.start_home">[docs]</a>    <span class="k">def</span> <span class="nf">start_home</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aspect</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change (home) aspect of this signal.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aspect</span><span class="o">=</span><span class="n">aspect</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Track"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Track">[docs]</a><span class="k">class</span> <span class="nc">Track</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages a segment of track.&quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;locked&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Turnout"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Turnout">[docs]</a><span class="k">class</span> <span class="nc">Turnout</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages a turnout.</span>
+
+<span class="sd">    :ivar position: ``True`` if the turnout it set to diverging.</span>
+<span class="sd">    :ivar moving: ``True`` if the turnout is moving to a new position.</span>
+<span class="sd">    :ivar locked: ``True`` if the turnout is locked (typically by a</span>
+<span class="sd">        :py:class:`Route`).</span>
+<span class="sd">    :ivar blocked: ``True`` if the turnout has been locked individually.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="s1">&#39;locked&#39;</span><span class="p">,</span> <span class="s1">&#39;blocked&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moving_delay</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Turnout.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Turnout.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Turnout.on_button"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Turnout.on_button">[docs]</a>    <span class="k">def</span> <span class="nf">on_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The signalman has pushed the button.</span>
+
+<span class="sd">        This callback is invoked when the `name` panel topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">on_button</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pushed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">is_outer_button</span><span class="p">(</span><span class="s1">&#39;WGT&#39;</span><span class="p">)</span> \
+                <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocked</span> \
+                <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupied</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_change</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Turnout.start_change"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Turnout.start_change">[docs]</a>    <span class="k">def</span> <span class="nf">start_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Switch turnout to new position.</span>
+
+<span class="sd">        :param position: If specified, move turnout to this position,</span>
+<span class="sd">            If unspecified, move the turnout to the other position.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">position</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">change</span><span class="p">(</span><span class="n">position</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span></div>
+
+<div class="viewcode-block" id="Turnout.change"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Turnout.change">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start the motion and wait for it to complete.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">moving</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># TODO: instead of this timeout, we need to wait for the trackside</span>
+        <span class="c1"># element to confirm reaching the final position.</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moving_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">moving</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="OuterButton"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.OuterButton">[docs]</a><span class="k">class</span> <span class="nc">OuterButton</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Records an outer button.&quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ElementManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The signalman has pushed the button.</span>
+
+<span class="sd">        This callback is invoked when the `name` panel topic receives a</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param name: The name of this element; also used as the topic for the</span>
+<span class="sd">            panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="OuterButton.add_counter"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.OuterButton.add_counter">[docs]</a>    <span class="k">def</span> <span class="nf">add_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a counter to this button.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="OuterButton.count"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.OuterButton.count">[docs]</a>    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Increment the counter for this button.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">counter</span><span class="o">.</span><span class="n">increment</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OuterButton.publish"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.OuterButton.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;No-op method.</span>
+
+<span class="sd">        There is no state to publish to the panel.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="OuterButton.update"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.OuterButton.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;No-op method.</span>
+
+<span class="sd">        There is no state to change.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> has no updatable properties&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="RouteManager"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.RouteManager">[docs]</a><span class="k">class</span> <span class="nc">RouteManager</span><span class="p">(</span><span class="n">ElementManager</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An object manager for :py:class:`Route` objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RouteManager.find_by_signals"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.RouteManager.find_by_signals">[docs]</a>    <span class="k">def</span> <span class="nf">find_by_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signals</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">signals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="n">signals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">signals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="n">signals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span></div></div>
+
+
+<div class="viewcode-block" id="Route"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route">[docs]</a><span class="k">class</span> <span class="nc">Route</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Manages a route.</span>
+
+<span class="sd">    A route connects a starting signal to a destination signal, and locks any intermediate turnouts and switches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">RouteManager</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;The object manager for these elements. See :py:class:`ElementManager`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tower</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">release_topic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param tower: The :py:class:`Tower` this element is part of.</span>
+<span class="sd">        :param s1: The signal at the start of the route.</span>
+<span class="sd">        :param s2: The signal at the end of the route.</span>
+<span class="sd">        :param release_topic: The trackside topic the route subscribes to to</span>
+<span class="sd">            release the route.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span> <span class="o">=</span> <span class="n">tower</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_delay</span> <span class="o">=</span> <span class="mf">0.2</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">release_topic</span><span class="p">:</span>
+            <span class="n">release_topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">trackside_topic</span><span class="p">(</span><span class="s1">&#39;track&#39;</span><span class="p">,</span> <span class="n">release_topic</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tower</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">release_topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_release</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a string representation of this object.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&gt;&#39;</span>
+
+<div class="viewcode-block" id="Route.reset"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset element to initial state and publish.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Route.add_turnout"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.add_turnout">[docs]</a>    <span class="k">def</span> <span class="nf">add_turnout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a turnout to the route.</span>
+
+<span class="sd">        :param turnout: The turnout to be added.</span>
+<span class="sd">        :param position: The position the turnout needs to be in for the</span>
+<span class="sd">            route to be locked.</span>
+<span class="sd">        :return: self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">turnout</span> <span class="o">=</span> <span class="n">Turnout</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">turnout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">turnout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Route.add_flank_protection"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.add_flank_protection">[docs]</a>    <span class="k">def</span> <span class="nf">add_flank_protection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a turnout as flank protection.</span>
+
+<span class="sd">        :param turnout: The turnout to be added.</span>
+<span class="sd">        :param position: The position the turnout needs to be in for the</span>
+<span class="sd">            route to be locked.</span>
+<span class="sd">        :return: self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">turnout</span> <span class="o">=</span> <span class="n">Turnout</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">turnout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Route.add_track"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.add_track">[docs]</a>    <span class="k">def</span> <span class="nf">add_track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">track</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a track.</span>
+
+<span class="sd">        :param track: The track to be added</span>
+<span class="sd">        :return: self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">track</span> <span class="o">=</span> <span class="n">Track</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Route.on_release"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.on_release">[docs]</a>    <span class="k">def</span> <span class="nf">on_release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Callback for unlocking the route.</span>
+
+<span class="sd">        :param topic: The topic the message was received under.</span>
+<span class="sd">        :param value: The contents of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unlock</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Route.start"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start locking the route.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;started: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">change</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Route.change"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.change">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check and lock route.</span>
+
+<span class="sd">        This is the most involved process the tower can perform:</span>
+
+<span class="sd">        1. Check that all turnouts are unlocked and unoccupied.</span>
+
+<span class="sd">        2. Move all turnouts to their correct positions.</span>
+
+<span class="sd">        3. Lock all turnouts.</span>
+
+<span class="sd">        4. Check that all tracks are unoccupied.</span>
+
+<span class="sd">        5. Lock all tracks.</span>
+
+<span class="sd">        6. Set start signal to go aspect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">turnout</span><span class="o">.</span><span class="n">locked</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Turnout </span><span class="si">{</span><span class="n">turnout</span><span class="si">}</span><span class="s1"> is already locked, not activating route </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">turnout</span><span class="o">.</span><span class="n">occupied</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Turnout </span><span class="si">{</span><span class="n">turnout</span><span class="si">}</span><span class="s1"> is occupied, not activating route </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="p">:</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">turnout</span><span class="o">.</span><span class="n">start_change</span><span class="p">(</span><span class="n">position</span><span class="p">))</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step_delay</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">turnout</span><span class="o">.</span><span class="n">occupied</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Turnout </span><span class="si">{</span><span class="n">turnout</span><span class="si">}</span><span class="s1"> is occupied, not activating route </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="p">:</span>
+            <span class="n">turnout</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">locked</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step_delay</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">track</span><span class="o">.</span><span class="n">occupied</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Track </span><span class="si">{</span><span class="n">track</span><span class="si">}</span><span class="s1"> is occupied, not activating route </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">:</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">locked</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">step_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">start_home</span><span class="p">(</span><span class="s1">&#39;Hp1&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Route.unlock"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Route.unlock">[docs]</a>    <span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unlock the route.</span>
+
+<span class="sd">        If the route is locked, remove locks from turnouts and tracks.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">start_home</span><span class="p">(</span><span class="s1">&#39;Hp0&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">turnout</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">turnouts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">flankProtections</span><span class="p">:</span>
+            <span class="n">turnout</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">locked</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracks</span><span class="p">:</span>
+            <span class="n">track</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">locked</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+
+
+<div class="viewcode-block" id="Tower"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower">[docs]</a><span class="k">class</span> <span class="nc">Tower</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Control logic for a Lorenz 20 signal tower.</span>
+
+<span class="sd">    Together with the elements in this module, this class implements the control</span>
+<span class="sd">    logic. It connects to an operators panel and to trackside equipment</span>
+<span class="sd">    through MQTT.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; tower = Tower(&#39;a_station&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Signal(tower, &#39;p1p3&#39;)</span>
+<span class="sd">        ... add more elements...</span>
+<span class="sd">        &gt;&gt;&gt; asyncio.run(tower.run())</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set up a new tower.</span>
+
+<span class="sd">        :param name: name of tower/station</span>
+<span class="sd">        :param client: (optional) an existing MQTTClient.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">MQTTDispatcher</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">managers</span> <span class="o">=</span> <span class="p">[</span><span class="n">BlockEnd</span><span class="p">,</span> <span class="n">BlockStart</span><span class="p">,</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">DistantSignal</span><span class="p">,</span> <span class="n">OuterButton</span><span class="p">,</span> <span class="n">Route</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Track</span><span class="p">,</span> <span class="n">Turnout</span><span class="p">]</span>
+
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;AsT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_counter</span><span class="p">()</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;BlGT&#39;</span><span class="p">)</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;ErsGT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_counter</span><span class="p">()</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;FHT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_counter</span><span class="p">()</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;HaGT&#39;</span><span class="p">)</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;SGT&#39;</span><span class="p">)</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;WGT&#39;</span><span class="p">)</span>
+        <span class="n">OuterButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;WHT&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">add_counter</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Tower.reset_all"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.reset_all">[docs]</a>    <span class="k">def</span> <span class="nf">reset_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset all managed elements.&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">reset_all</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Tower.is_outer_button"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.is_outer_button">[docs]</a>    <span class="k">def</span> <span class="nf">is_outer_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true only if this outer button is pushed, but no other.&quot;&quot;&quot;</span>
+
+        <span class="n">buttons</span> <span class="o">=</span> <span class="n">OuterButton</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">entries</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">buttons</span><span class="p">[</span><span class="n">button</span><span class="p">]</span><span class="o">.</span><span class="n">pushed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">buttons</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">pushed</span> <span class="ow">and</span> <span class="n">b</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">button</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Tower.publish"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Publish a message and don&#39;t wait, &quot;fire and forget&quot; style.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Publishing </span><span class="si">{</span><span class="n">topic</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Tower.panel_topic"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.panel_topic">[docs]</a>    <span class="k">def</span> <span class="nf">panel_topic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the full topic for a panel element.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;frischen/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">/panel/</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+<div class="viewcode-block" id="Tower.trackside_topic"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.trackside_topic">[docs]</a>    <span class="k">def</span> <span class="nf">trackside_topic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the full topic for a trackside element.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;frischen/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">/trackside/</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+<div class="viewcode-block" id="Tower.run"><a class="viewcode-back" href="../../python/frischen.spdrl20.html#frischen.spdrl20.Tower.run">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Connect to the broker and act on messages received.&quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;mqtt://localhost/&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_all</span><span class="p">()</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">()</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2018, Stefan Bethke.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

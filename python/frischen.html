@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>frischen package &mdash; Frischen  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="frischen.broker module" href="frischen.broker.html" />
+    <link rel="prev" title="frischen" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Frischen
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../developing.html">Developing Frischen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mqtt.html">Frischens Use of MQTT</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">frischen</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">frischen package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="frischen.broker.html">frischen.broker module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="frischen.spdrl20.html">frischen.spdrl20 module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Frischen</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">frischen</a> &raquo;</li>
+        
+      <li>frischen package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/python/frischen.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-frischen">
+<span id="frischen-package"></span><h1>frischen package<a class="headerlink" href="#module-frischen" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="frischen.MqttClient">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.</span></code><code class="sig-name descname"><span class="pre">MqttClient</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1883</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="frischen.MqttClient.on_connect">
+<code class="sig-name descname"><span class="pre">on_connect</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_disconnect">
+<code class="sig-name descname"><span class="pre">on_disconnect</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_disconnect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_log">
+<code class="sig-name descname"><span class="pre">on_log</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_message">
+<code class="sig-name descname"><span class="pre">on_message</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_publish">
+<code class="sig-name descname"><span class="pre">on_publish</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_publish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_subscribe">
+<code class="sig-name descname"><span class="pre">on_subscribe</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">granted_qos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_subscribe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttClient.on_unsubscribe">
+<code class="sig-name descname"><span class="pre">on_unsubscribe</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttClient.on_unsubscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttClient.on_unsubscribe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.MqttClient.qos">
+<code class="sig-name descname"><span class="pre">qos</span></code><em class="property"> <span class="pre">=</span> <span class="pre">{0:</span> <span class="pre">'M',</span> <span class="pre">1:</span> <span class="pre">'L',</span> <span class="pre">2:</span> <span class="pre">'E'}</span></em><a class="headerlink" href="#frischen.MqttClient.qos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.MqttMonitor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.</span></code><code class="sig-name descname"><span class="pre">MqttMonitor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1883</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.MqttClient" title="frischen.MqttClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.MqttClient</span></code></a></p>
+<dl class="py method">
+<dt id="frischen.MqttMonitor.monitor">
+<code class="sig-name descname"><span class="pre">monitor</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttMonitor.monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttMonitor.monitor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttMonitor.on_connect">
+<code class="sig-name descname"><span class="pre">on_connect</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttMonitor.on_connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttMonitor.on_connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttMonitor.on_message">
+<code class="sig-name descname"><span class="pre">on_message</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttMonitor.on_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttMonitor.on_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.MqttPost">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.</span></code><code class="sig-name descname"><span class="pre">MqttPost</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1883</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttPost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttPost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.MqttClient" title="frischen.MqttClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.MqttClient</span></code></a></p>
+<p>Connect to broker and post one or more messages.</p>
+<dl class="py method">
+<dt id="frischen.MqttPost.on_connect">
+<code class="sig-name descname"><span class="pre">on_connect</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttPost.on_connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttPost.on_connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttPost.on_publish">
+<code class="sig-name descname"><span class="pre">on_publish</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttPost.on_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttPost.on_publish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttPost.post">
+<code class="sig-name descname"><span class="pre">post</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttPost.post"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttPost.post" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frischen.MqttPost.publish_next">
+<code class="sig-name descname"><span class="pre">publish_next</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen.html#MqttPost.publish_next"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.MqttPost.publish_next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="frischen.broker.html">frischen.broker module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frischen.spdrl20.html">frischen.spdrl20 module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="frischen.spdrl20.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="frischen.broker.html" class="btn btn-neutral float-right" title="frischen.broker module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="modules.html" class="btn btn-neutral float-left" title="frischen" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2018, Stefan Bethke.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

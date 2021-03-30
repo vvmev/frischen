@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Developing Frischen &mdash; Frischen  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Frischens Use of MQTT" href="mqtt.html" />
+    <link rel="prev" title="Welcome to Frischen’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Frischen
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developing Frischen</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up-a-development-environment">Setting Up a Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#starting-the-mqtt-broker">Starting the MQTT Broker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-the-python-environment">Setting Up The Python Environment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#working-with-python-code">Working With Python Code</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unit-tests-and-test-coverage">Unit Tests And Test Coverage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#building">Building</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mqtt.html">Frischens Use of MQTT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python/modules.html">frischen</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Frischen</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Developing Frischen</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/developing.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="developing-frischen">
+<h1>Developing Frischen<a class="headerlink" href="#developing-frischen" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>Frischen uses a decently large technology stack. For a complete development
+environment, you need:</p>
+<ul>
+<li><p>Docker and Docker Compose:</p>
+<p>To have an MQTT broker available locally, Frischen uses
+<a class="reference external" href="https://www.docker.com/get-started">Docker</a> and
+<a class="reference external" href="https://docs.docker.com/compose/">Docker Compose</a> to run
+<a class="reference external" href="https://mosquitto.org">Mosquitto</a>.</p>
+</li>
+<li><p>Python 3.7 and pipenv</p>
+<p>Most of the tower control software as well as the utilities are written in
+<a class="reference external" href="https://www.python.org">Python</a>. Make sure you install version 3.7 or
+newer, as Frischen uses a number of features not available in older versions.</p>
+<p>After installing Python 3.7, install
+<a class="reference external" href="https://pipenv.readthedocs.io">pipenv</a>.</p>
+</li>
+<li><p>A code editor or IDE with support for Python and JavaScript</p>
+<p>While a standard text editor is sufficient, a code editor or an integrated
+development environment can be quite helpful. These work quite decently:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://atom.io">Atom</a> (open source, free)</p></li>
+<li><p><a class="reference external" href="https://www.jetbrains.com/pycharm/">IntelliJ PyCharm</a> and
+<a class="reference external" href="https://www.jetbrains.com/webstorm/">IntelliJ WebStorm</a> (free for
+personal use community edition, or commercial)</p></li>
+<li><p><a class="reference external" href="https://visualstudio.microsoft.com/">Microsoft VisualStudio Code</a>
+(free use)</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="setting-up-a-development-environment">
+<h2>Setting Up a Development Environment<a class="headerlink" href="#setting-up-a-development-environment" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="starting-the-mqtt-broker">
+<h3>Starting the MQTT Broker<a class="headerlink" href="#starting-the-mqtt-broker" title="Permalink to this headline">¶</a></h3>
+<p>In the main directory, run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ docker-compose up -d
+Creating network <span class="s2">&quot;frischen_default&quot;</span> with the default driver
+Pulling broker <span class="o">(</span>eclipse-mosquitto:<span class="o">)</span>...
+latest: Pulling from library/eclipse-mosquitto
+4fe2ade4980c: Pull <span class="nb">complete</span>
+9ed5ccc7b14f: Pull <span class="nb">complete</span>
+<span class="m">848281416363</span>: Pull <span class="nb">complete</span>
+Digest: sha256:b96c387e1ea3c7531f7fe45447462e60e75b76b9d3d9e26c50a46283353953e6
+Status: Downloaded newer image <span class="k">for</span> eclipse-mosquitto:latest
+Creating frischen_broker_1 ... <span class="k">done</span>
+</pre></div>
+</div>
+<p>This will start the mosquitto docker container.  The container listens on TCP
+port 1883 for MQTT and on port 9001 for HTTP/WebSocket.</p>
+<p>The built-in web server serves files from the <code class="docutils literal notranslate"><span class="pre">web/</span></code> directory, so you can
+go to <a class="reference external" href="http://localhost:9001/">http://localhost:9001/</a> to see the available HTML/JavaScript apps.</p>
+</div>
+<div class="section" id="setting-up-the-python-environment">
+<h3>Setting Up The Python Environment<a class="headerlink" href="#setting-up-the-python-environment" title="Permalink to this headline">¶</a></h3>
+<p>Using a Python virtual environment ensures that you have the right versions of
+Python packages needed. First, make sure you have <code class="docutils literal notranslate"><span class="pre">pipenv</span></code> installed:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ python3 -m pip install pipenv
+</pre></div>
+</div>
+<p>Then, you can use <code class="docutils literal notranslate"><span class="pre">pipenv</span></code> to create a fresh environment and enter it:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ pipenv install --dev
+Pipfile.lock (3ea1da) out of date, updating to (4895ab)…
+Locking [dev-packages] dependencies…
+✔ Success!
+Locking [packages] dependencies…
+✔ Success!
+Updated Pipfile.lock (3ea1da)!
+Installing dependencies from Pipfile.lock (3ea1da)…
+To activate this project&#39;s virtualenv, run pipenv shell.
+Alternatively, run a command inside the virtualenv with pipenv run.
+</pre></div>
+</div>
+<p>Finally, you can activate the freshly installed environment:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ pipenv shell
+Launching subshell <span class="k">in</span> virtual environment…
+ . /Users/me/.local/share/virtualenvs/frischen-0szepg5g/bin/activate
+$  . /Users/me/.local/share/virtualenvs/frischen-0szepg5g/bin/activate
+</pre></div>
+</div>
+<p>You can now run the Python scripts in the top level of the project directory.</p>
+</div>
+</div>
+<div class="section" id="working-with-python-code">
+<h2>Working With Python Code<a class="headerlink" href="#working-with-python-code" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="unit-tests-and-test-coverage">
+<h3>Unit Tests And Test Coverage<a class="headerlink" href="#unit-tests-and-test-coverage" title="Permalink to this headline">¶</a></h3>
+<p>The Python modules have unit tests. To run the tests, use the standard Python
+<code class="docutils literal notranslate"><span class="pre">unittest</span></code> package.  To check test coverage, the <code class="docutils literal notranslate"><span class="pre">coverage</span></code> package is
+installed:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ coverage run -m unittest <span class="o">&amp;&amp;</span> coverage report <span class="o">&amp;&amp;</span> coverage html
+</pre></div>
+</div>
+<p>This will create coverage data and a report in <code class="docutils literal notranslate"><span class="pre">coverage/</span></code>.</p>
+</div>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="building">
+<h3>Building<a class="headerlink" href="#building" title="Permalink to this headline">¶</a></h3>
+<p>The project uses sphinx to generate HTML pages, including API docs for the
+Python and JavaScript modules. The documentation sources are in <code class="docutils literal notranslate"><span class="pre">docs/</span></code>.
+To rebuild the HTML pages, run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> docs
+$ make html
+</pre></div>
+</div>
+<p>The output is available in <code class="docutils literal notranslate"><span class="pre">docs/build/html</span></code> and can be viewed in a browser.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="mqtt.html" class="btn btn-neutral float-right" title="Frischens Use of MQTT" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Frischen’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2018, Stefan Bethke.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

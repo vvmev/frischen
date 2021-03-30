@@ -1,0 +1,1283 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>frischen.spdrl20 module &mdash; Frischen  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="frischen.broker module" href="frischen.broker.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Frischen
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../developing.html">Developing Frischen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mqtt.html">Frischens Use of MQTT</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">frischen</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="frischen.html">frischen package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="frischen.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="frischen.broker.html">frischen.broker module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">frischen.spdrl20 module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Frischen</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">frischen</a> &raquo;</li>
+        
+          <li><a href="frischen.html">frischen package</a> &raquo;</li>
+        
+      <li>frischen.spdrl20 module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/python/frischen.spdrl20.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-frischen.spdrl20">
+<span id="frischen-spdrl20-module"></span><h1>frischen.spdrl20 module<a class="headerlink" href="#module-frischen.spdrl20" title="Permalink to this headline">¶</a></h1>
+<p>A Spurplan-Drucktasten Lorenz 20 (SpDrL20) signal tower.</p>
+<p>The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> implements the tower itself, while the
+<a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></a> and derived classes implement the control elements of
+the tower.</p>
+<p>These elements can be added to the tower:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#frischen.spdrl20.BlockEnd" title="frischen.spdrl20.BlockEnd"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockEnd</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.BlockStart" title="frischen.spdrl20.BlockStart"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockStart</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Counter" title="frischen.spdrl20.Counter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Counter</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.DistantSignal" title="frischen.spdrl20.DistantSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">DistantSignal</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.OuterButton" title="frischen.spdrl20.OuterButton"><code class="xref py py-class docutils literal notranslate"><span class="pre">OuterButton</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Route" title="frischen.spdrl20.Route"><code class="xref py py-class docutils literal notranslate"><span class="pre">Route</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Signal" title="frischen.spdrl20.Signal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Signal</span></code></a></p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Track" title="frischen.spdrl20.Track"><code class="xref py py-class docutils literal notranslate"><span class="pre">Track</span></code></a></p></li>
+</ul>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The following code sets up a tower with some elements.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">tower</span> <span class="o">=</span> <span class="n">Tower</span><span class="p">(</span><span class="s1">&#39;a_tower&#39;</span><span class="p">)</span>
+<span class="n">Turnout</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;W1&#39;</span><span class="p">)</span>
+<span class="n">Signal</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="n">DistantSignal</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt id="frischen.spdrl20.BlockEnd">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">BlockEnd</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blockstart_topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clearance_lock_release_topic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockEnd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>The line block apparatus at the end of line.</p>
+<p>This element has two state variables, on top of the general occupied status:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">blocked</span></code>: if True, the block is locked, and no train must enter.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">clearance_lock</span></code>: if True, the train has not yet gone past the block</dt><dd><p>signal, and the block cannot be unlocked.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Create BlockEnd element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+<li><p><strong>blockstart_topic</strong> – The trackside topic this element subscribes to
+to learn of the block being locked.</p></li>
+<li><p><strong>clearance_lock_release_topic</strong> – The trackside topic for the rail
+contact or other mechanism that unlocks the clearance lock after
+the train has left the block.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockEnd.on_block_start">
+<code class="sig-name descname"><span class="pre">on_block_start</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockEnd.on_block_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockEnd.on_block_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>The start of the line has locked the block.</p>
+<p>This callback is invoked when <code class="docutils literal notranslate"><span class="pre">blockstart_topic</span></code> receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockEnd.on_button">
+<code class="sig-name descname"><span class="pre">on_button</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockEnd.on_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockEnd.on_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>The signalman has pushed the button.</p>
+<p>This callback is invoked when the <cite>name</cite> panel topic receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockEnd.on_clearance_lock_release">
+<code class="sig-name descname"><span class="pre">on_clearance_lock_release</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockEnd.on_clearance_lock_release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockEnd.on_clearance_lock_release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Track has been cleared.</p>
+<p>If the track segment has transitioned from occupied to unoccupied, the
+clearance lock is unlocked. This callback is invoked when the
+<cite>clearance_lock_release_topic</cite> trackside topic receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockEnd.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockEnd.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockEnd.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.BlockEnd.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.BlockEnd.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.BlockStart">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">BlockStart</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blockend_topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocking_track_topic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockStart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockStart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>The line block apparatus at the beginning of the line.</p>
+<p>The block is locked when the train occupies this track segment, and
+unlocked when the remote blockend unlocks it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+<li><p><strong>blockend_topic</strong> – The trackside topic this element publishes to
+to inform the blockend about the block being locked,
+and subscribes to to learn about the remote blockend unlocking
+the block.</p></li>
+<li><p><strong>blocking_track_topic</strong> – The trackside topic for the rail
+contact or other mechanism that locks the block.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockStart.on_blockend">
+<code class="sig-name descname"><span class="pre">on_blockend</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockStart.on_blockend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockStart.on_blockend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block apparatus at the end of the block has been unblocked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockStart.on_blocking_track">
+<code class="sig-name descname"><span class="pre">on_blocking_track</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockStart.on_blocking_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockStart.on_blocking_track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Track at the beginning of the block has been cleared again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.BlockStart.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#BlockStart.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.BlockStart.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.BlockStart.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.BlockStart.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Counter">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Counter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">button</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Counter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Counter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>Counts substitute procedure operations on the panel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+<li><p><strong>button</strong> – The <code class="xref py py-class docutils literal notranslate"><span class="pre">Button</span></code> this counter is attached to.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Counter.increment">
+<code class="sig-name descname"><span class="pre">increment</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Counter.increment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Counter.increment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a substitute procedure operation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Counter.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Counter.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Counter.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Counter.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Counter.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.DistantSignal">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">DistantSignal</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">home</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounted_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#DistantSignal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.DistantSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>A distant signal.</p>
+<p>The distant signal shows an aspect that indicates to the drive the aspect
+of the respective home signal, so the driver can break in time to come to a
+full stop in fron of the home siganl if necessary.</p>
+<p>Since the distant signal can indicate the aspect of different home signals,
+based on the position of one or more turnouts, some logic is implemented to
+be able to configure these conditions.</p>
+<p>Additionally, if the distant signal is mounted to the same mast as another
+home signal, the distant signal will be switched off if the home signal is
+showing a stop aspect.</p>
+<ol class="arabic simple">
+<li><p>Single home signal</p></li>
+</ol>
+<p>If there are no turnouts between this distant signal and its home signal,
+this distant signal simply shows the respective aspect for its home signal.</p>
+<dl>
+<dt>Example:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">DistantSignal</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<ol class="arabic simple" start="2">
+<li><p>Multiple home signals</p></li>
+</ol>
+<p>If is a turnout between this distant signal and a home signal,
+this distant signal shows the respective aspect of one of these
+home signals based on the position of the intervening switches.  To
+properly describe this setup, you need to pass a dict with the name of the
+switch, and a sub-array of the two home signals.</p>
+<dl>
+<dt>For example:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">DistantSignal</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;p1p2&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="s1">&#39;W5&#39;</span><span class="p">,</span> <span class="p">[</span> <span class="s1">&#39;P1&#39;</span><span class="p">,</span> <span class="s1">&#39;P2&#39;</span> <span class="p">]})</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>In this example, the distant signal <code class="docutils literal notranslate"><span class="pre">p1p2</span></code> will show the respective
+aspect for the home signal <code class="docutils literal notranslate"><span class="pre">P1</span></code> if the turnout <code class="docutils literal notranslate"><span class="pre">W5</span></code> is in the
+straight position, and will show the aspect of <code class="docutils literal notranslate"><span class="pre">P2</span></code>  if <code class="docutils literal notranslate"><span class="pre">W5</span></code> is set to
+diverging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+<li><p><strong>home</strong> – A string or dict describing which home signal this
+distant signal shows its aspects for.</p></li>
+<li><p><strong>mounted_at</strong> – A string or <a class="reference internal" href="#frischen.spdrl20.Signal" title="frischen.spdrl20.Signal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Signal</span></code></a> home signal object.
+If specified, this distant signal is mounted on the same mast as
+the home signal.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.DistantSignal.mounted_at_changed">
+<code class="sig-name descname"><span class="pre">mounted_at_changed</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#DistantSignal.mounted_at_changed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.DistantSignal.mounted_at_changed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when the home signal on the same mask changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.DistantSignal.publish">
+<code class="sig-name descname"><span class="pre">publish</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#DistantSignal.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.DistantSignal.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publishes this signals aspect to the panel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.DistantSignal.start_distant">
+<code class="sig-name descname"><span class="pre">start_distant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#DistantSignal.start_distant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.DistantSignal.start_distant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used by the callbacks to set this signals aspect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.DistantSignal.topic">
+<code class="sig-name descname"><span class="pre">topic</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#DistantSignal.topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.DistantSignal.topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full panel topic for this element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>topic as string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.DistantSignal.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.DistantSignal.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.DistantSignal.translated_aspects">
+<code class="sig-name descname"><span class="pre">translated_aspects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">{'Hp0':</span> <span class="pre">'Vr0',</span> <span class="pre">'Hp1':</span> <span class="pre">'Vr1',</span> <span class="pre">'Hp2':</span> <span class="pre">'Vr2'}</span></em><a class="headerlink" href="#frischen.spdrl20.DistantSignal.translated_aspects" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Element">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Element</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The base class for elements of the signal tower.</p>
+<p>There is one state variable, occupied, which shows whether the track represented by this element is currently
+occupied by a train.</p>
+<p>This is an abstract base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.on_button">
+<code class="sig-name descname"><span class="pre">on_button</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.on_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.on_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>The signalman has pushed the button.</p>
+<p>This callback is invoked when the <cite>name</cite> panel topic receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.on_occupied">
+<code class="sig-name descname"><span class="pre">on_occupied</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.on_occupied"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.on_occupied" title="Permalink to this definition">¶</a></dt>
+<dd><p>The track occupied status has changed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.publish">
+<code class="sig-name descname"><span class="pre">publish</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publish this elements state to the panel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.topic">
+<code class="sig-name descname"><span class="pre">topic</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full panel topic for this element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>topic as string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.update">
+<code class="sig-name descname"><span class="pre">update</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Element.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Element.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update this elements properties.</p>
+<p>After updating the properties, publish the new state to the panel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – you can specify one or more properties as named
+parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Element.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Element.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Element.value">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">value</span></code><a class="headerlink" href="#frischen.spdrl20.Element.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.ElementManager">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">ElementManager</span></code><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manage the collection of elements created from a class.</p>
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.all">
+<code class="sig-name descname"><span class="pre">all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all registered elements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.entries">
+<code class="sig-name descname"><span class="pre">entries</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.entries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dict of all objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict of all objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.get">
+<code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return element by name.</p>
+<p>As a convenience, the object being retrieved can be specified by name
+or by the object itself. When passing in the object, <code class="docutils literal notranslate"><span class="pre">None</span></code> will be
+returned if the object is not part of this manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name of an object in this manager, or the object
+itself.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The object or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.register">
+<code class="sig-name descname"><span class="pre">register</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register an element with this manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>element</strong> – The element to be registered.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.reset_all">
+<code class="sig-name descname"><span class="pre">reset_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.reset_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.reset_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bring all objects to a defined state.</p>
+<p>By calling each element’s reset() method, all properties are reset, and the element’s state is published.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.ElementManager.unregister">
+<code class="sig-name descname"><span class="pre">unregister</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#ElementManager.unregister"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.ElementManager.unregister" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove element from the manager.</p>
+<p>The element to be removed can be specified by the object or its name.
+:param element: the element to be unregistered.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.MQTTDispatcher">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">MQTTDispatcher</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#MQTTDispatcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.MQTTDispatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Subscribe to one or more MQTT topics, and call the registered callbacks with the messages received.</p>
+<dl class="py method">
+<dt id="frischen.spdrl20.MQTTDispatcher.dispatch">
+<em class="property"><span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">dispatch</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#MQTTDispatcher.dispatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.MQTTDispatcher.dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive and dispatch messages until told to stop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.MQTTDispatcher.dispatch_one">
+<code class="sig-name descname"><span class="pre">dispatch_one</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#MQTTDispatcher.dispatch_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.MQTTDispatcher.dispatch_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dispatch one message to all subscribers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – the message topic</p></li>
+<li><p><strong>value</strong> – the message content</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.MQTTDispatcher.subscribe">
+<code class="sig-name descname"><span class="pre">subscribe</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#MQTTDispatcher.subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.MQTTDispatcher.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe a callback function to a topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – A name for this callback; used only for debugging and
+logging.</p></li>
+<li><p><strong>fn</strong> – The callback function to be called on
+<a class="reference internal" href="#frischen.spdrl20.PubSubTopic.publish" title="frischen.spdrl20.PubSubTopic.publish"><code class="xref py py-func docutils literal notranslate"><span class="pre">PubSubTopic.publish()</span></code></a>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.OuterButton">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">OuterButton</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#OuterButton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.OuterButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>Records an outer button.</p>
+<p>The signalman has pushed the button.</p>
+<p>This callback is invoked when the <cite>name</cite> panel topic receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.OuterButton.add_counter">
+<code class="sig-name descname"><span class="pre">add_counter</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#OuterButton.add_counter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.OuterButton.add_counter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a counter to this button.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.OuterButton.count">
+<code class="sig-name descname"><span class="pre">count</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#OuterButton.count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.OuterButton.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increment the counter for this button.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.OuterButton.publish">
+<code class="sig-name descname"><span class="pre">publish</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#OuterButton.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.OuterButton.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>No-op method.</p>
+<p>There is no state to publish to the panel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.OuterButton.update">
+<code class="sig-name descname"><span class="pre">update</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#OuterButton.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.OuterButton.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>No-op method.</p>
+<p>There is no state to change.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.OuterButton.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.OuterButton.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.PubSubTopic">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">PubSubTopic</span></code><a class="reference internal" href="../_modules/frischen/spdrl20.html#PubSubTopic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.PubSubTopic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A simple way for one object to notify others.</p>
+<dl class="py method">
+<dt id="frischen.spdrl20.PubSubTopic.publish">
+<code class="sig-name descname"><span class="pre">publish</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#PubSubTopic.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.PubSubTopic.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call all registered subscribers.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.PubSubTopic.subscribe">
+<code class="sig-name descname"><span class="pre">subscribe</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#PubSubTopic.subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.PubSubTopic.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register callback to be called when publish() is called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – A name for this callback; used only for debugging and
+logging.</p></li>
+<li><p><strong>fn</strong> – The callback function to be called on
+<a class="reference internal" href="#frischen.spdrl20.PubSubTopic.publish" title="frischen.spdrl20.PubSubTopic.publish"><code class="xref py py-func docutils literal notranslate"><span class="pre">PubSubTopic.publish()</span></code></a>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Route">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Route</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">release_topic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages a route.</p>
+<p>A route connects a starting signal to a destination signal, and locks any intermediate turnouts and switches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>s1</strong> – The signal at the start of the route.</p></li>
+<li><p><strong>s2</strong> – The signal at the end of the route.</p></li>
+<li><p><strong>release_topic</strong> – The trackside topic the route subscribes to to
+release the route.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.add_flank_protection">
+<code class="sig-name descname"><span class="pre">add_flank_protection</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">turnout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.add_flank_protection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.add_flank_protection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a turnout as flank protection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>turnout</strong> – The turnout to be added.</p></li>
+<li><p><strong>position</strong> – The position the turnout needs to be in for the
+route to be locked.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.add_track">
+<code class="sig-name descname"><span class="pre">add_track</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.add_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.add_track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a track.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>track</strong> – The track to be added</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.add_turnout">
+<code class="sig-name descname"><span class="pre">add_turnout</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">turnout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.add_turnout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.add_turnout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a turnout to the route.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>turnout</strong> – The turnout to be added.</p></li>
+<li><p><strong>position</strong> – The position the turnout needs to be in for the
+route to be locked.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.change">
+<em class="property"><span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">change</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check and lock route.</p>
+<p>This is the most involved process the tower can perform:</p>
+<ol class="arabic simple">
+<li><p>Check that all turnouts are unlocked and unoccupied.</p></li>
+<li><p>Move all turnouts to their correct positions.</p></li>
+<li><p>Lock all turnouts.</p></li>
+<li><p>Check that all tracks are unoccupied.</p></li>
+<li><p>Lock all tracks.</p></li>
+<li><p>Set start signal to go aspect.</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.on_release">
+<code class="sig-name descname"><span class="pre">on_release</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.on_release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.on_release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback for unlocking the route.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.start">
+<code class="sig-name descname"><span class="pre">start</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start locking the route.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Route.unlock">
+<code class="sig-name descname"><span class="pre">unlock</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Route.unlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Route.unlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unlock the route.</p>
+<p>If the route is locked, remove locks from turnouts and tracks.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Route.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.RouteManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Route.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.RouteManager">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">RouteManager</span></code><a class="reference internal" href="../_modules/frischen/spdrl20.html#RouteManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.RouteManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.ElementManager</span></code></a></p>
+<p>An object manager for <a class="reference internal" href="#frischen.spdrl20.Route" title="frischen.spdrl20.Route"><code class="xref py py-class docutils literal notranslate"><span class="pre">Route</span></code></a> objects.</p>
+<dl class="py method">
+<dt id="frischen.spdrl20.RouteManager.find_by_signals">
+<code class="sig-name descname"><span class="pre">find_by_signals</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signals</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#RouteManager.find_by_signals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.RouteManager.find_by_signals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Signal">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Signal</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>Controls a signal.</p>
+<p>A  signal can consist of multiple backgrounds added to its mast. Use these
+methods to add the respective signal backgrounds:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#frischen.spdrl20.Signal.add_alt" title="frischen.spdrl20.Signal.add_alt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal.add_alt()</span></code></a> adds an alternate signal background (Zs1)</p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Signal.add_home" title="frischen.spdrl20.Signal.add_home"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal.add_home()</span></code></a> adds the home signal background (Hp0, Hp1, Hp2)</p></li>
+<li><p><a class="reference internal" href="#frischen.spdrl20.Signal.add_shunting" title="frischen.spdrl20.Signal.add_shunting"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal.add_shunting()</span></code></a> adds the shunting background (Sh1)</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">add_*</span></code> methods return the object itself, allowing the use of the
+builder pattern:
+&gt;&gt;&gt; s1 = Signal(tower, ‘A’).add_alt().add_home()</p>
+<p>Note that a distant signal mounted to the same mast as a home signal is
+created by adding a <a class="reference internal" href="#frischen.spdrl20.DistantSignal" title="frischen.spdrl20.DistantSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">DistantSignal</span></code></a> and setting it’s
+<code class="docutils literal notranslate"><span class="pre">mounted_on</span></code> property to the home signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><p><strong>alt_timeout</strong> – time in seconds the alternate aspect will be shown.</p>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.add_alt">
+<code class="sig-name descname"><span class="pre">add_alt</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.add_alt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.add_alt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an alternate signal background to this signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.add_home">
+<code class="sig-name descname"><span class="pre">add_home</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.add_home"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.add_home" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a home background to this signal.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.add_shunting">
+<code class="sig-name descname"><span class="pre">add_shunting</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.add_shunting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.add_shunting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a shunting background to this signal.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.change_alt">
+<em class="property"><span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">change_alt</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.change_alt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.change_alt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change to alt aspect, then return to stop aspect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.on_button">
+<code class="sig-name descname"><span class="pre">on_button</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.on_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.on_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>The signalman has pushed the button.</p>
+<p>This callback is invoked when the <cite>name</cite> panel topic receives a
+message.</p>
+<p>For a signal, pushing the button will only cause an action when
+pushed together with another.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>When pushed together with another signal button, and a route has</dt><dd><p>been defined for this pair, try to lock that route.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>When pushed together with the <code class="docutils literal notranslate"><span class="pre">SGT</span></code> outer button, try to set the</dt><dd><p>signal to the shunting aspect (Sh1).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>When pushed together with the <code class="docutils literal notranslate"><span class="pre">ErsGT</span></code> outer button, try to set</dt><dd><p>the signal to the alternate aspect (Zs1).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>When pushed together with the <code class="docutils literal notranslate"><span class="pre">HaGT</span></code> outer button, set the signal</dt><dd><p>aspect to stop (Hp0).</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.start_alt">
+<code class="sig-name descname"><span class="pre">start_alt</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.start_alt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.start_alt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the change to the alt aspect (Zs1).</p>
+<p>The alternate aspect will extinguish after
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">Signal.alt_timeout</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.start_change_shunting">
+<code class="sig-name descname"><span class="pre">start_change_shunting</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.start_change_shunting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.start_change_shunting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change to shunting aspect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.start_halt">
+<code class="sig-name descname"><span class="pre">start_halt</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.start_halt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.start_halt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change to stop aspect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Signal.start_home">
+<code class="sig-name descname"><span class="pre">start_home</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aspect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Signal.start_home"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Signal.start_home" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change (home) aspect of this signal.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Signal.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Signal.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Tower">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Tower</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Control logic for a Lorenz 20 signal tower.</p>
+<p>Together with the elements in this module, this class implements the control
+logic. It connects to an operators panel and to trackside equipment
+through MQTT.</p>
+<dl>
+<dt>Example:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tower</span> <span class="o">=</span> <span class="n">Tower</span><span class="p">(</span><span class="s1">&#39;a_station&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Signal</span><span class="p">(</span><span class="n">tower</span><span class="p">,</span> <span class="s1">&#39;p1p3&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">add</span> <span class="n">more</span> <span class="n">elements</span><span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tower</span><span class="o">.</span><span class="n">run</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Set up a new tower.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – name of tower/station</p></li>
+<li><p><strong>client</strong> – (optional) an existing MQTTClient.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.is_outer_button">
+<code class="sig-name descname"><span class="pre">is_outer_button</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">button</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.is_outer_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.is_outer_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true only if this outer button is pushed, but no other.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.panel_topic">
+<code class="sig-name descname"><span class="pre">panel_topic</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.panel_topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.panel_topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full topic for a panel element.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.publish">
+<code class="sig-name descname"><span class="pre">publish</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publish a message and don’t wait, “fire and forget” style.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.reset_all">
+<code class="sig-name descname"><span class="pre">reset_all</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.reset_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.reset_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset all managed elements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.run">
+<em class="property"><span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect to the broker and act on messages received.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Tower.trackside_topic">
+<code class="sig-name descname"><span class="pre">trackside_topic</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Tower.trackside_topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Tower.trackside_topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full topic for a trackside element.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Track">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Track</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>Manages a segment of track.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Track.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Track.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frischen.spdrl20.Turnout">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">Turnout</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Turnout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Turnout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frischen.spdrl20.Element" title="frischen.spdrl20.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">frischen.spdrl20.Element</span></code></a></p>
+<p>Manages a turnout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if the turnout it set to diverging.</p></li>
+<li><p><strong>moving</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if the turnout is moving to a new position.</p></li>
+<li><p><strong>locked</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if the turnout is locked (typically by a
+<a class="reference internal" href="#frischen.spdrl20.Route" title="frischen.spdrl20.Route"><code class="xref py py-class docutils literal notranslate"><span class="pre">Route</span></code></a>).</p></li>
+<li><p><strong>blocked</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if the turnout has been locked individually.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>tower</strong> – The <a class="reference internal" href="#frischen.spdrl20.Tower" title="frischen.spdrl20.Tower"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tower</span></code></a> this element is part of.</p></li>
+<li><p><strong>name</strong> – The name of this element; also used as the topic for the
+panel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="frischen.spdrl20.Turnout.change">
+<em class="property"><span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">change</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Turnout.change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Turnout.change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the motion and wait for it to complete.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Turnout.on_button">
+<code class="sig-name descname"><span class="pre">on_button</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Turnout.on_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Turnout.on_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>The signalman has pushed the button.</p>
+<p>This callback is invoked when the <cite>name</cite> panel topic receives a
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> – The topic the message was received under.</p></li>
+<li><p><strong>value</strong> – The contents of the message.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Turnout.reset">
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Turnout.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Turnout.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset element to initial state and publish.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frischen.spdrl20.Turnout.start_change">
+<code class="sig-name descname"><span class="pre">start_change</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#Turnout.start_change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.Turnout.start_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch turnout to new position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – If specified, move turnout to this position,
+If unspecified, move the turnout to the other position.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frischen.spdrl20.Turnout.objects">
+<code class="sig-name descname"><span class="pre">objects</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;frischen.spdrl20.ElementManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#frischen.spdrl20.Turnout.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object manager for these elements. See <a class="reference internal" href="#frischen.spdrl20.ElementManager" title="frischen.spdrl20.ElementManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElementManager</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="frischen.spdrl20.array_to_str">
+<code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">array_to_str</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#array_to_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.array_to_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string representing the array.</p>
+<p>Each of the arrays values are joined by a comma <code class="docutils literal notranslate"><span class="pre">,</span></code>. Each value is
+converted to a string, with <code class="docutils literal notranslate"><span class="pre">bool</span></code> values converted to <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">1</span></code>,
+respectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ary</strong> – The array to be converted</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="frischen.spdrl20.to_bool">
+<code class="sig-prename descclassname"><span class="pre">frischen.spdrl20.</span></code><code class="sig-name descname"><span class="pre">to_bool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frischen/spdrl20.html#to_bool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#frischen.spdrl20.to_bool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code> if value is <code class="docutils literal notranslate"><span class="pre">True</span></code>, or any string value
+representing true, such as <code class="docutils literal notranslate"><span class="pre">y</span></code> or <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>v</strong> – an object to be evaluated</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="frischen.broker.html" class="btn btn-neutral float-left" title="frischen.broker module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2018, Stefan Bethke.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
