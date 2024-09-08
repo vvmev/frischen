@@ -1,5 +1,4 @@
----
-version: '3'
+# run a local mqtt server for development purposes
 services:
   broker:
     image: eclipse-mosquitto

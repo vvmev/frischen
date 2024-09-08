@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 colored = "*"
 graphviz = "*"
-hbmqtt = "*"
+amqtt = "*"
 paho-mqtt = "*"
 pyyaml = "*"
 
